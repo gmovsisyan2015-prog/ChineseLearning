@@ -679,6 +679,36 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 }
 .call-controls { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .call-ctrl-btn { font-size: 1.2rem; padding: 12px 16px; }
+.call-mute-badge {
+  position: absolute; right: 8px; top: 8px; background: var(--red); color: #fff;
+  font-size: 0.95rem; line-height: 1; padding: 6px 8px; border-radius: 50%; box-shadow: var(--shadow);
+}
+.call-panel {
+  margin-top: 16px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px; animation: fadeIn 0.2s ease;
+}
+.call-chat-messages {
+  height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 10px; padding-right: 4px;
+}
+.call-chat-msg {
+  align-self: flex-start; background: var(--canvas); border-radius: 14px 14px 14px 4px;
+  padding: 8px 12px; max-width: 80%; font-size: 0.92rem; word-break: break-word;
+}
+.call-chat-msg.own { align-self: flex-end; background: var(--blue-soft); border-radius: 14px 14px 4px 14px; }
+.call-chat-msg.system { align-self: center; background: transparent; color: var(--text-light); font-size: 0.82rem; font-style: italic; }
+.call-chat-input-row { display: flex; gap: 8px; }
+.call-chat-input-row input {
+  flex: 1; padding: 10px 12px; border: 2px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--font); font-weight: 600; background: var(--bg); color: var(--text);
+}
+.call-chat-input-row input:focus { border-color: var(--blue); outline: none; }
+.call-board-toolbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+.call-board-tool { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--text-light); }
+.call-board-canvas {
+  width: 100%; height: auto; display: block; background: #fff; border-radius: var(--radius-sm);
+  border: 2px solid var(--border); touch-action: none; cursor: crosshair;
+}
 .call-ctrl-off { background: var(--red-soft) !important; color: var(--red-dark) !important; }
 .call-ctrl-active { background: var(--blue-soft) !important; color: var(--blue-dark) !important; }
 @media (max-width: 560px) {
@@ -824,13 +854,33 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
           <div class="call-video-wrap">
             <video id="call-remote-video" autoplay playsinline></video>
             <span class="call-video-label">Собеседник</span>
+            <span class="call-mute-badge hidden" id="call-remote-mute-icon" title="Микрофон собеседника выключен">🔇</span>
           </div>
         </div>
         <div class="call-controls">
           <button type="button" class="btn btn-icon call-ctrl-btn" id="btn-toggle-mic" title="Микрофон">🎤</button>
           <button type="button" class="btn btn-icon call-ctrl-btn" id="btn-toggle-cam" title="Камера">📷</button>
           <button type="button" class="btn btn-icon call-ctrl-btn" id="btn-toggle-screen" title="Демонстрация экрана">🖥️</button>
+          <button type="button" class="btn btn-secondary btn-small" id="btn-toggle-chat" title="Текстовый чат">💬 Чат</button>
+          <button type="button" class="btn btn-secondary btn-small" id="btn-toggle-board" title="Общая доска">🖊️ Доска</button>
           <button type="button" class="btn btn-danger call-ctrl-btn" id="btn-end-call" title="Завершить звонок">📵 Завершить</button>
+        </div>
+
+        <div class="call-panel hidden" id="call-chat-panel">
+          <div class="call-chat-messages" id="call-chat-messages"></div>
+          <div class="call-chat-input-row">
+            <input type="text" id="call-chat-input" placeholder="Написать сообщение..." autocomplete="off" spellcheck="false">
+            <button type="button" class="btn btn-primary btn-small" id="btn-chat-send">Отправить</button>
+          </div>
+        </div>
+
+        <div class="call-panel hidden" id="call-board-panel">
+          <div class="call-board-toolbar">
+            <label class="call-board-tool">Цвет <input type="color" id="board-color" value="#1cb0f6"></label>
+            <label class="call-board-tool">Толщина <input type="range" id="board-width" min="1" max="14" value="3"></label>
+            <button type="button" class="btn btn-secondary btn-small" id="btn-board-clear">🗑️ Очистить</button>
+          </div>
+          <canvas id="call-board-canvas" class="call-board-canvas" width="640" height="360"></canvas>
         </div>
       </div>
     </section>
@@ -3533,11 +3583,16 @@ const PEER_ID_PREFIX = 'zh-lessons-app-';
 const callState = {
   peer: null,
   mediaConn: null,
+  dataConn: null,
   localStream: null,
   screenStream: null,
   micOn: true,
   camOn: true,
   screenSharing: false,
+  boardCanvas: null,
+  boardCtx: null,
+  boardDrawing: false,
+  boardLast: null,
 };
 
 function generateCallCode() {
@@ -3588,6 +3643,7 @@ function initCallPeer() {
       setCallStatus('Не удалось получить доступ к камере/микрофону: ' + e.message, true);
     }
   });
+  callState.peer.on('connection', (conn) => { setupDataConnection(conn); });
 }
 
 async function ensureLocalStream() {
@@ -3617,12 +3673,150 @@ async function startCallTo(rawCode) {
     initCallPeer();
     const stream = await ensureLocalStream();
     const clean = rawCode.trim().toUpperCase().replace(new RegExp('^' + PEER_ID_PREFIX.toUpperCase()), '');
+    const targetId = PEER_ID_PREFIX + clean;
     setCallStatus('Вызываем собеседника...');
-    const mediaConn = callState.peer.call(PEER_ID_PREFIX + clean, stream);
+    const mediaConn = callState.peer.call(targetId, stream);
     attachCallHandlers(mediaConn);
+    setupDataConnection(callState.peer.connect(targetId, { reliable: true }));
   } catch (e) {
     setCallStatus('Не удалось начать звонок: ' + e.message, true);
   }
+}
+
+// ------------------------------------------------
+// Data-канал: текстовый чат, общая доска, статус микрофона.
+// Работает поверх того же самого прямого P2P-соединения —
+// отдельный сервер для этого не нужен.
+// ------------------------------------------------
+function setupDataConnection(conn) {
+  callState.dataConn = conn;
+  conn.on('open', () => { sendData({ type: 'mic', enabled: callState.micOn }); });
+  conn.on('data', handleIncomingData);
+  conn.on('close', () => { callState.dataConn = null; });
+  conn.on('error', () => { callState.dataConn = null; });
+}
+
+function sendData(obj) {
+  if (callState.dataConn && callState.dataConn.open) {
+    try { callState.dataConn.send(obj); } catch (e) {}
+  }
+}
+
+function handleIncomingData(msg) {
+  if (!msg || !msg.type) return;
+  if (msg.type === 'chat') appendChatMessage(msg.text, false);
+  else if (msg.type === 'mic') updateRemoteMicIndicator(msg.enabled);
+  else if (msg.type === 'draw') drawRemoteStroke(msg);
+  else if (msg.type === 'clear') clearBoardLocal();
+}
+
+function updateRemoteMicIndicator(enabled) {
+  const icon = document.getElementById('call-remote-mute-icon');
+  if (icon) icon.classList.toggle('hidden', !!enabled);
+}
+
+function appendChatMessage(text, isOwn, isSystem) {
+  const box = document.getElementById('call-chat-messages');
+  if (!box) return;
+  const msg = document.createElement('div');
+  msg.className = 'call-chat-msg' + (isOwn ? ' own' : '') + (isSystem ? ' system' : '');
+  msg.textContent = text;
+  box.appendChild(msg);
+  box.scrollTop = box.scrollHeight;
+}
+
+function sendChatMessage() {
+  const input = document.getElementById('call-chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!callState.dataConn || !callState.dataConn.open) {
+    appendChatMessage('Нет соединения для чата — дождитесь подключения собеседника.', false, true);
+    return;
+  }
+  sendData({ type: 'chat', text });
+  appendChatMessage(text, true);
+  input.value = '';
+}
+
+function toggleCallPanel(panelId) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  const otherId = panelId === 'call-chat-panel' ? 'call-board-panel' : 'call-chat-panel';
+  const other = document.getElementById(otherId);
+  const willShow = panel.classList.contains('hidden');
+  if (other) other.classList.add('hidden');
+  panel.classList.toggle('hidden', !willShow);
+  if (willShow && panelId === 'call-board-panel' && !callState.boardCanvas) initWhiteboard();
+}
+
+// ------------------------------------------------
+// Общая доска: рисуем нормализованными координатами (0..1),
+// поэтому синхронизация не зависит от размера экрана каждого
+// участника — оба холста имеют фиксированное внутреннее
+// разрешение 640×360, а CSS лишь растягивает их по ширине.
+// ------------------------------------------------
+function initWhiteboard() {
+  const canvas = document.getElementById('call-board-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  callState.boardCanvas = canvas;
+  callState.boardCtx = ctx;
+
+  function posFromEvent(e) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height };
+  }
+  function drawSegment(x0, y0, x1, y1, color, width) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x0 * canvas.width, y0 * canvas.height);
+    ctx.lineTo(x1 * canvas.width, y1 * canvas.height);
+    ctx.stroke();
+  }
+  canvas.addEventListener('pointerdown', (e) => {
+    callState.boardDrawing = true;
+    callState.boardLast = posFromEvent(e);
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!callState.boardDrawing || !callState.boardLast) return;
+    const pos = posFromEvent(e);
+    const color = document.getElementById('board-color').value;
+    const width = parseInt(document.getElementById('board-width').value, 10) || 3;
+    drawSegment(callState.boardLast.x, callState.boardLast.y, pos.x, pos.y, color, width);
+    sendData({ type: 'draw', x0: callState.boardLast.x, y0: callState.boardLast.y, x1: pos.x, y1: pos.y, color, width });
+    callState.boardLast = pos;
+  });
+  function endStroke() { callState.boardDrawing = false; callState.boardLast = null; }
+  canvas.addEventListener('pointerup', endStroke);
+  canvas.addEventListener('pointerleave', endStroke);
+  canvas.addEventListener('pointercancel', endStroke);
+}
+
+function drawRemoteStroke(msg) {
+  const canvas = callState.boardCanvas;
+  const ctx = callState.boardCtx;
+  if (!canvas || !ctx) return;
+  ctx.strokeStyle = msg.color;
+  ctx.lineWidth = msg.width;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(msg.x0 * canvas.width, msg.y0 * canvas.height);
+  ctx.lineTo(msg.x1 * canvas.width, msg.y1 * canvas.height);
+  ctx.stroke();
+}
+
+function clearBoardLocal() {
+  if (callState.boardCtx && callState.boardCanvas) {
+    callState.boardCtx.clearRect(0, 0, callState.boardCanvas.width, callState.boardCanvas.height);
+  }
+}
+
+function clearBoard() {
+  clearBoardLocal();
+  sendData({ type: 'clear' });
 }
 
 function toggleMic() {
@@ -3632,6 +3826,7 @@ function toggleMic() {
   const btn = document.getElementById('btn-toggle-mic');
   btn.textContent = callState.micOn ? '🎤' : '🔇';
   btn.classList.toggle('call-ctrl-off', !callState.micOn);
+  sendData({ type: 'mic', enabled: callState.micOn });
 }
 
 function toggleCam() {
@@ -3681,6 +3876,7 @@ async function stopScreenShare() {
 
 function endCall(userInitiated) {
   if (callState.mediaConn) { try { callState.mediaConn.close(); } catch (e) {} callState.mediaConn = null; }
+  if (callState.dataConn) { try { callState.dataConn.close(); } catch (e) {} callState.dataConn = null; }
   if (callState.screenStream) { callState.screenStream.getTracks().forEach(t => t.stop()); callState.screenStream = null; callState.screenSharing = false; }
   if (callState.localStream) { callState.localStream.getTracks().forEach(t => t.stop()); callState.localStream = null; }
   const room = document.getElementById('call-room');
@@ -3689,6 +3885,11 @@ function endCall(userInitiated) {
   if (setup) setup.classList.remove('hidden');
   const lv = document.getElementById('call-local-video'); if (lv) lv.srcObject = null;
   const rv = document.getElementById('call-remote-video'); if (rv) rv.srcObject = null;
+  const muteIcon = document.getElementById('call-remote-mute-icon'); if (muteIcon) muteIcon.classList.add('hidden');
+  const chatBox = document.getElementById('call-chat-messages'); if (chatBox) chatBox.innerHTML = '';
+  const chatPanel = document.getElementById('call-chat-panel'); if (chatPanel) chatPanel.classList.add('hidden');
+  const boardPanel = document.getElementById('call-board-panel'); if (boardPanel) boardPanel.classList.add('hidden');
+  clearBoardLocal();
   if (userInitiated) setCallStatus('Звонок завершён.');
 }
 
@@ -3756,6 +3957,11 @@ function init() {
   document.getElementById('btn-toggle-cam').addEventListener('click', () => { playSound('click'); toggleCam(); });
   document.getElementById('btn-toggle-screen').addEventListener('click', () => { toggleScreenShare(); });
   document.getElementById('btn-end-call').addEventListener('click', () => { playSound('click'); endCall(true); });
+  document.getElementById('btn-toggle-chat').addEventListener('click', () => { playSound('click'); toggleCallPanel('call-chat-panel'); });
+  document.getElementById('btn-toggle-board').addEventListener('click', () => { playSound('click'); toggleCallPanel('call-board-panel'); });
+  document.getElementById('btn-chat-send').addEventListener('click', () => { sendChatMessage(); });
+  document.getElementById('call-chat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); } });
+  document.getElementById('btn-board-clear').addEventListener('click', () => { playSound('click'); clearBoard(); });
   document.getElementById('vocab-search').addEventListener('input', (e) => {
     state.vocabSearchTerm = e.target.value.trim();
     renderVocabularyScreen();
