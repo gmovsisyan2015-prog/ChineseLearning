@@ -3824,15 +3824,43 @@ function initCallPeer() {
       setCallStatus('Ошибка соединения (' + (err && err.type ? err.type : 'unknown') + ').', true);
     }
   });
-  callState.peer.on('call', async (incomingCall) => {
-    setCallStatus('Входящий звонок, подключаем камеру и микрофон...');
-    try {
-      const stream = await ensureLocalStream();
-      incomingCall.answer(stream);
-      attachCallHandlers(incomingCall);
-    } catch (e) {
-      setCallStatus('Не удалось получить доступ к камере/микрофону: ' + e.message, true);
+  callState.peer.on('call', (incomingCall) => {
+    if (callState.mediaConn) {
+      // Уже в другом звонке — отклоняем автоматически, не мешая текущему разговору
+      try { incomingCall.close(); } catch (e) {}
+      return;
     }
+    const callerCode = (incomingCall.peer || '').replace(new RegExp('^' + PEER_ID_PREFIX), '');
+    playSound('success');
+    showModal(
+      'Входящий звонок',
+      `<p>Вам звонит собеседник с кодом <strong>${escapeHtml(callerCode || '—')}</strong>. Принять звонок?</p>`,
+      `<button class="btn btn-secondary btn-small" id="btn-decline-call">Отклонить</button>
+       <button class="btn btn-primary btn-small" id="btn-accept-call">📞 Принять</button>`
+    );
+    const declineBtn = document.getElementById('btn-decline-call');
+    const acceptBtn = document.getElementById('btn-accept-call');
+    if (declineBtn) declineBtn.addEventListener('click', () => {
+      playSound('click');
+      try { incomingCall.close(); } catch (e) {}
+      closeModal();
+    });
+    if (acceptBtn) acceptBtn.addEventListener('click', async () => {
+      playSound('click');
+      closeModal();
+      setCallStatus('Подключаем камеру и микрофон...');
+      try {
+        const stream = await ensureLocalStream();
+        incomingCall.answer(stream);
+        attachCallHandlers(incomingCall);
+      } catch (e) {
+        setCallStatus('Не удалось получить доступ к камере/микрофону: ' + e.message, true);
+        try { incomingCall.close(); } catch (err) {}
+      }
+    });
+    incomingCall.on('close', () => {
+      if (!callState.mediaConn) closeModal(); // собеседник отменил вызов, пока мы ещё не ответили
+    });
   });
   callState.peer.on('connection', (conn) => { setupDataConnection(conn); });
 }
