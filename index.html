@@ -555,8 +555,8 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 .chapter-nav-arrow { flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--border-strong); background: var(--surface); color: var(--text); font-weight: 900; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s ease; }
 .chapter-nav-arrow:hover { border-color: var(--ink-blue); }
 .chapter-nav-arrow.hidden { display: none; }
-.chapter-goto-btn { margin-top: 14px; background: rgba(255,255,255,0.94); color: var(--text); box-shadow: 0 3px 0 0 rgba(0,0,0,0.18); }
-.chapter-goto-btn:hover { background: #fff; }
+.chapter-goto-btn { margin-top: 14px; background: var(--surface); color: var(--text); box-shadow: 0 3px 0 0 rgba(0,0,0,0.18); }
+.chapter-goto-btn:hover { filter: brightness(1.08); }
 .chapter-goto-btn:disabled { opacity: 0.55; cursor: not-allowed; filter: grayscale(0.3); }
 .chapter-block { margin-bottom: 8px; scroll-margin-top: 16px; }
 .chapter-header { border-radius: var(--radius); padding: 20px 24px; margin-bottom: 28px; color: #fff; box-shadow: var(--shadow); position: relative; overflow: hidden; }
@@ -669,26 +669,46 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 }
 .call-join-row input:focus { border-color: var(--blue); outline: none; }
 .call-status { min-height: 1.4em; font-weight: 700; color: var(--text-light); }
-.call-videos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
-.call-video-wrap {
+.call-videos {
   position: relative; background: #111; border-radius: var(--radius-sm); overflow: hidden;
-  aspect-ratio: 4/3; box-shadow: var(--shadow);
+  margin-bottom: 18px; box-shadow: var(--shadow);
 }
-.call-video-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.call-video-wrap-remote { position: relative; width: 100%; aspect-ratio: 16/9; background: #111; }
+.call-video-wrap-remote video { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Своё видео — маленький перетаскиваемый PIP-блок поверх видео собеседника, как в Zoom/WhatsApp */
+.call-video-wrap-local {
+  position: absolute; right: 12px; bottom: 12px; width: 30%; max-width: 190px; min-width: 84px;
+  aspect-ratio: 4/3; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+  border: 2px solid rgba(255,255,255,0.55); cursor: grab; touch-action: none; z-index: 5; background: #222;
+}
+.call-video-wrap-local.dragging { cursor: grabbing; transition: none !important; }
+.call-video-wrap-local video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .call-video-label {
   position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,0.55); color: #fff;
-  font-size: 0.78rem; font-weight: 700; padding: 3px 9px; border-radius: 20px;
+  font-size: 0.78rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; pointer-events: none;
+}
+.call-video-wrap-local .call-video-label { font-size: 0.68rem; padding: 2px 7px; left: 5px; bottom: 5px; }
+.call-connection-indicator {
+  position: absolute; left: 12px; top: 12px; z-index: 6; background: rgba(0,0,0,0.55); color: #fff;
+  font-size: 0.78rem; font-weight: 700; padding: 5px 10px; border-radius: 20px; display: flex; align-items: center; gap: 5px;
 }
 .call-controls { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .call-ctrl-btn { font-size: 1.2rem; padding: 12px 16px; }
 .call-mute-badge {
   position: absolute; right: 8px; top: 8px; background: var(--red); color: #fff;
-  font-size: 0.95rem; line-height: 1; padding: 6px 8px; border-radius: 50%; box-shadow: var(--shadow);
+  font-size: 0.95rem; line-height: 1; padding: 6px 8px; border-radius: 50%; box-shadow: var(--shadow); z-index: 6;
+}
+/* На маленьких экранах текстовые подписи у Чата/Доски/Слайдов не помещаются в
+   ряд — оставляем только иконки, полное название остаётся в title (всплывающей подсказке) */
+@media (max-width: 520px) {
+  .call-controls .call-ctrl-text { display: none; }
+  .call-controls .call-ctrl-icon { font-size: 1.05rem; }
 }
 .call-panel {
-  margin-top: 16px; background: var(--surface); border: 1px solid var(--border);
+  position: relative; margin-top: 16px; background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 14px; animation: fadeIn 0.2s ease;
 }
+.call-panel-close { position: absolute; right: 8px; top: 8px; z-index: 2; padding: 6px 10px; }
 .call-chat-messages {
   height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
   margin-bottom: 10px; padding-right: 4px;
@@ -706,15 +726,44 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 }
 .call-chat-input-row input:focus { border-color: var(--blue); outline: none; }
 .call-board-toolbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+.call-board-tools { display: flex; gap: 6px; }
+.board-tool-btn.active { background: var(--blue-soft); color: var(--blue-dark); }
+.board-select { padding: 8px 10px; border: 2px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-family: var(--font); font-weight: 700; }
+.call-board-hint { margin: 0 0 10px; font-size: 0.8rem; }
 .call-board-tool { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--text-light); }
+.call-board-canvas-wrap { position: relative; }
 .call-board-canvas {
   width: 100%; height: auto; display: block; background: #fff; border-radius: var(--radius-sm);
   border: 2px solid var(--border); touch-action: none; cursor: crosshair;
 }
+.call-board-canvas-wrap.tool-hand .call-board-canvas { cursor: grab; }
+.call-board-canvas-wrap.tool-text .call-board-canvas { cursor: text; }
+.board-text-input {
+  position: absolute; z-index: 10; border: 2px dashed var(--blue); background: rgba(255,255,255,0.95);
+  font-family: var(--font); font-weight: 700; padding: 2px 4px; border-radius: 4px; min-width: 60px;
+}
+.call-presentation-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.call-presentation-counter { font-weight: 700; color: var(--text-light); min-width: 54px; text-align: center; }
+.call-presentation-view {
+  background: #111; border-radius: var(--radius-sm); border: 2px solid var(--border);
+  min-height: 220px; display: flex; align-items: center; justify-content: center; padding: 10px;
+}
+.call-presentation-view img { max-width: 100%; max-height: 60vh; display: block; border-radius: 4px; }
+.call-presentation-view .hint { color: #ccc; text-align: center; margin: 0; }
 .call-ctrl-off { background: var(--red-soft) !important; color: var(--red-dark) !important; }
 .call-ctrl-active { background: var(--blue-soft) !important; color: var(--blue-dark) !important; }
 @media (max-width: 560px) {
-  .call-videos { grid-template-columns: 1fr; }
+  .call-video-wrap-local { width: 36%; right: 8px; bottom: 8px; }
+}
+/* Чат/доска/презентация на мобильных — выезжающая снизу панель поверх видео,
+   а не блок в общем скролле страницы (иначе приходится долго скроллить мимо
+   видео и кнопок, чтобы добраться до доски) */
+@media (max-width: 560px) {
+  .call-panel {
+    position: fixed; left: 0; right: 0; bottom: 0; top: 30%; z-index: 40;
+    margin-top: 0; border-radius: 16px 16px 0 0; overflow-y: auto;
+    box-shadow: 0 -6px 24px rgba(0,0,0,0.3);
+  }
 }
 
 /* --- Адаптивность --- */
@@ -848,27 +897,30 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
         <p class="call-status" id="call-status" role="status" aria-live="polite"></p>
       </div>
       <div class="call-room hidden" id="call-room">
-        <div class="call-videos">
-          <div class="call-video-wrap">
-            <video id="call-local-video" autoplay playsinline muted></video>
-            <span class="call-video-label">Вы</span>
-          </div>
-          <div class="call-video-wrap">
+        <div class="call-videos" id="call-videos">
+          <span class="call-connection-indicator" id="call-connection-indicator" title="Качество соединения">🟢 <span id="call-connection-text">Соединено</span></span>
+          <div class="call-video-wrap-remote">
             <video id="call-remote-video" autoplay playsinline></video>
             <span class="call-video-label">Собеседник</span>
             <span class="call-mute-badge hidden" id="call-remote-mute-icon" title="Микрофон собеседника выключен">🔇</span>
+          </div>
+          <div class="call-video-wrap-local" id="call-video-wrap-local">
+            <video id="call-local-video" autoplay playsinline muted></video>
+            <span class="call-video-label">Вы</span>
           </div>
         </div>
         <div class="call-controls">
           <button type="button" class="btn btn-icon call-ctrl-btn" id="btn-toggle-mic" title="Микрофон">🎤</button>
           <button type="button" class="btn btn-icon call-ctrl-btn" id="btn-toggle-cam" title="Камера">📷</button>
           <button type="button" class="btn btn-icon call-ctrl-btn" id="btn-toggle-screen" title="Демонстрация экрана">🖥️</button>
-          <button type="button" class="btn btn-secondary btn-small" id="btn-toggle-chat" title="Текстовый чат">💬 Чат</button>
-          <button type="button" class="btn btn-secondary btn-small" id="btn-toggle-board" title="Общая доска">🖊️ Доска</button>
+          <button type="button" class="btn btn-secondary btn-small" id="btn-toggle-chat" title="Текстовый чат"><span class="call-ctrl-icon">💬</span><span class="call-ctrl-text">Чат</span></button>
+          <button type="button" class="btn btn-secondary btn-small" id="btn-toggle-board" title="Общая доска"><span class="call-ctrl-icon">🖊️</span><span class="call-ctrl-text">Доска</span></button>
+          <button type="button" class="btn btn-secondary btn-small" id="btn-toggle-presentation" title="Презентация"><span class="call-ctrl-icon">🖼️</span><span class="call-ctrl-text">Слайды</span></button>
           <button type="button" class="btn btn-danger call-ctrl-btn" id="btn-end-call" title="Завершить звонок">📵 Завершить</button>
         </div>
 
         <div class="call-panel hidden" id="call-chat-panel">
+          <button type="button" class="btn btn-icon btn-small call-panel-close" data-close-panel="call-chat-panel" title="Закрыть">✕</button>
           <div class="call-chat-messages" id="call-chat-messages"></div>
           <div class="call-chat-input-row">
             <input type="text" id="call-chat-input" placeholder="Написать сообщение..." autocomplete="off" spellcheck="false">
@@ -877,12 +929,40 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
         </div>
 
         <div class="call-panel hidden" id="call-board-panel">
+          <button type="button" class="btn btn-icon btn-small call-panel-close" data-close-panel="call-board-panel" title="Закрыть">✕</button>
           <div class="call-board-toolbar">
+            <div class="call-board-tools" role="group" aria-label="Инструменты доски">
+              <button type="button" class="btn btn-icon btn-small board-tool-btn active" id="board-tool-pen" data-tool="pen" title="Карандаш">✏️</button>
+              <button type="button" class="btn btn-icon btn-small board-tool-btn" id="board-tool-text" data-tool="text" title="Текст">🔤</button>
+              <button type="button" class="btn btn-icon btn-small board-tool-btn" id="board-tool-hand" data-tool="hand" title="Рука — двигать доску">✋</button>
+            </div>
             <label class="call-board-tool">Цвет <input type="color" id="board-color" value="#1cb0f6"></label>
             <label class="call-board-tool">Толщина <input type="range" id="board-width" min="1" max="14" value="3"></label>
-            <button type="button" class="btn btn-secondary btn-small" id="btn-board-clear">🗑️ Очистить</button>
+            <button type="button" class="btn btn-secondary btn-small" id="btn-board-image" title="Вставить картинку">🖼️</button>
+            <input type="file" id="board-image-input" accept="image/*" class="hidden">
+            <button type="button" class="btn btn-secondary btn-small" id="btn-board-clear" title="Очистить текущую доску">🗑️</button>
+            <select id="board-select" class="board-select" title="Текущая доска"></select>
+            <button type="button" class="btn btn-secondary btn-small" id="btn-board-new" title="Новая доска">➕</button>
           </div>
-          <canvas id="call-board-canvas" class="call-board-canvas" width="640" height="360"></canvas>
+          <p class="hint call-board-hint">Доска бесконечная: возьмите инструмент «✋ Рука», чтобы двигать её в стороны, колесо мыши — масштаб. Можно вставить картинку (Ctrl+V) или перетащить файл на доску.</p>
+          <div class="call-board-canvas-wrap" id="call-board-canvas-wrap">
+            <canvas id="call-board-canvas" class="call-board-canvas" width="640" height="360"></canvas>
+          </div>
+        </div>
+
+        <div class="call-panel hidden" id="call-presentation-panel">
+          <button type="button" class="btn btn-icon btn-small call-panel-close" data-close-panel="call-presentation-panel" title="Закрыть">✕</button>
+          <div class="call-presentation-toolbar">
+            <button type="button" class="btn btn-secondary btn-small" id="btn-presentation-upload">📤 Загрузить PDF/картинки</button>
+            <input type="file" id="presentation-file-input" accept="application/pdf,image/*" multiple class="hidden">
+            <button type="button" class="btn btn-icon btn-small" id="btn-presentation-prev" title="Предыдущий слайд">‹</button>
+            <span class="call-presentation-counter" id="presentation-slide-counter">0 / 0</span>
+            <button type="button" class="btn btn-icon btn-small" id="btn-presentation-next" title="Следующий слайд">›</button>
+          </div>
+          <div class="call-presentation-view" id="call-presentation-view">
+            <img id="presentation-slide-img" class="hidden" alt="Слайд презентации">
+            <p class="hint" id="presentation-empty-hint">Загрузите PDF-файл или картинки, чтобы начать показ слайдов. Текущий слайд виден и вам, и собеседнику.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -929,6 +1009,10 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
      Само видео и звук передаются напрямую между браузерами (peer-to-peer),
      минуя какой-либо сервер, и шифруются протоколом WebRTC (DTLS-SRTP). -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window.pdfjsLib) { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
+</script>
 
 <script>
 'use strict';
@@ -1112,7 +1196,7 @@ const TRANSLATIONS = {
     newTaskOption: 'Вариант {n}',
     invalidImportFormat: 'Неверный формат файла! Ожидался объект с полем lessons (массив).',
     invalidLessonsAlert: 'Файл не содержит валидных уроков!',
-    importSuccess: 'Импорт завершён! Добавлено {added} новых, обновлено {replaced} уроков.',
+    importSuccess: 'Импорт завершён! Добавлено {added} новых, обновлено {replaced} уроков. Слов в словарь добавлено: {vocab}.',
     importStudentSuccess: 'Импорт завершён! Добавлено {added} новых, обновлено {replaced} уроков.',
     readFileError: 'Ошибка чтения файла: {error}',
     readFileFailed: 'Не удалось прочитать файл.',
@@ -1304,7 +1388,7 @@ const TRANSLATIONS = {
     newTaskOption: '选项 {n}',
     invalidImportFormat: '文件格式不正确！应为包含 lessons 数组的对象。',
     invalidLessonsAlert: '文件中没有有效课程！',
-    importSuccess: '导入完成！新增 {added} 个课程，更新 {replaced} 个课程。',
+    importSuccess: '导入完成！新增 {added} 个课程，更新 {replaced} 个课程。新增词汇 {vocab} 个。',
     importStudentSuccess: '导入完成！新增 {added} 个课程，更新 {replaced} 个课程。',
     readFileError: '读取文件出错：{error}',
     readFileFailed: '无法读取文件。',
@@ -1493,7 +1577,7 @@ const TRANSLATIONS = {
     newTaskOption: 'Option {n}',
     invalidImportFormat: 'Invalid file format! Expected an object with a lessons array.',
     invalidLessonsAlert: 'The file does not contain valid lessons!',
-    importSuccess: 'Import complete! Added {added} lessons and updated {replaced}.',
+    importSuccess: 'Import complete! Added {added} lessons and updated {replaced}. Vocabulary words added: {vocab}.',
     importStudentSuccess: 'Import complete! Added {added} lessons and updated {replaced}.',
     readFileError: 'Error reading file: {error}',
     readFileFailed: 'Could not read the file.',
@@ -1837,14 +1921,14 @@ function getAudioContext() {
 
 function loadSoundSetting() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_SOUND);
+    const raw = storageGet(STORAGE_KEY_SOUND);
     state.soundEnabled = raw === null ? true : raw === 'on';
   } catch (e) { state.soundEnabled = true; }
   updateSoundButton();
 }
 function toggleSound() {
   state.soundEnabled = !state.soundEnabled;
-  try { localStorage.setItem(STORAGE_KEY_SOUND, state.soundEnabled ? 'on' : 'off'); } catch (e) {}
+  try { storageSet(STORAGE_KEY_SOUND, state.soundEnabled ? 'on' : 'off'); } catch (e) {}
   updateSoundButton();
   if (state.soundEnabled) playSound('click');
 }
@@ -1942,19 +2026,99 @@ function sha256(str) {
 }
 
 // ============================================
-// localStorage
+// Хранилище: IndexedDB вместо localStorage
+// ------------------------------------------------
+// localStorage даёт origin'у всего ~5-10 МБ на ВСЁ — с картинками на доске,
+// презентациями и растущим словарём в это упирались. IndexedDB даёт на
+// порядки больше (сотни МБ/несколько ГБ). Чтобы не переписывать весь код
+// приложения на async/await, используем синхронный кэш в памяти (storageGet
+// отдаёт данные мгновенно), а сама запись в IndexedDB уходит в фоне
+// (storageSet). При старте приложения (idbPreload) кэш заполняется из
+// IndexedDB, и заодно один раз переносятся туда старые данные из
+// localStorage (если человек уже пользовался приложением раньше).
 // ============================================
+const IDB_DB_NAME = 'chinese_app_storage';
+const IDB_STORE_NAME = 'kv';
+let _idbDb = null;
+function openIDB() {
+  return new Promise((resolve, reject) => {
+    if (_idbDb) { resolve(_idbDb); return; }
+    if (!window.indexedDB) { reject(new Error('IndexedDB недоступен')); return; }
+    const req = indexedDB.open(IDB_DB_NAME, 1);
+    req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(IDB_STORE_NAME)) req.result.createObjectStore(IDB_STORE_NAME); };
+    req.onsuccess = () => { _idbDb = req.result; resolve(_idbDb); };
+    req.onerror = () => reject(req.error);
+  });
+}
+function idbGetRaw(key) {
+  return openIDB().then(db => new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE_NAME, 'readonly');
+      const req = tx.objectStore(IDB_STORE_NAME).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(undefined);
+    } catch (e) { resolve(undefined); }
+  }));
+}
+function idbSetRaw(key, value) {
+  return openIDB().then(db => new Promise((resolve, reject) => {
+    try {
+      const tx = db.transaction(IDB_STORE_NAME, 'readwrite');
+      tx.objectStore(IDB_STORE_NAME).put(value, key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    } catch (e) { reject(e); }
+  }));
+}
+const _storageCache = {};
+let _storageReady = false;
+// Список всех ключей, которые приложение хранит — используется для
+// предзагрузки кэша и одноразового переноса из localStorage
+const ALL_STORAGE_KEYS = [
+  'chinese_lessons_v2', 'chinese_progress_v2', 'chinese_theme_v1', 'chinese_settings_v1',
+  'chinese_language_v1', 'chinese_streak_v1', 'chinese_sound_v1', 'chinese_xp_v1',
+  'chinese_lesson_units_v1', 'chinese_vocabulary_v1', 'chinese_boards_v1'
+];
+async function initStorage() {
+  try {
+    await Promise.all(ALL_STORAGE_KEYS.map(async (key) => {
+      let val = await idbGetRaw(key);
+      if (val === undefined || val === null) {
+        // Одноразовая миграция: если в IndexedDB ещё ничего нет для этого
+        // ключа, но старые данные лежат в localStorage — переносим их.
+        try {
+          const legacy = localStorage.getItem(key);
+          if (legacy !== null) { val = legacy; await idbSetRaw(key, legacy); }
+        } catch (e) { /* localStorage недоступен — не критично */ }
+      }
+      _storageCache[key] = val === undefined ? null : val;
+    }));
+  } catch (e) {
+    console.warn('IndexedDB недоступен, используем запасной вариант (localStorage):', e);
+  }
+  _storageReady = true;
+}
+function storageGet(key) {
+  if (_storageReady) return _storageCache[key] !== undefined ? _storageCache[key] : null;
+  // Запасной вариант на случай обращения до готовности кэша
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function storageSet(key, value) {
+  _storageCache[key] = value;
+  idbSetRaw(key, value).catch(e => console.warn('Не удалось записать в IndexedDB ключ ' + key + ':', e));
+}
+
 function loadData() {
   let isFreshInstall = false;
   try {
-    const lessonsRaw = localStorage.getItem(STORAGE_KEY_LESSONS);
+    const lessonsRaw = storageGet(STORAGE_KEY_LESSONS);
     if (lessonsRaw) { state.lessons = JSON.parse(lessonsRaw); }
     else { state.lessons = getDemoData(); isFreshInstall = true; saveLessons(); }
-    const progressRaw = localStorage.getItem(STORAGE_KEY_PROGRESS);
+    const progressRaw = storageGet(STORAGE_KEY_PROGRESS);
     if (progressRaw) { state.progress = JSON.parse(progressRaw); }
   } catch (e) { state.lessons = getDemoData(); state.progress = {}; isFreshInstall = true; }
   try {
-    const unitsRaw = localStorage.getItem(STORAGE_KEY_LESSON_UNITS);
+    const unitsRaw = storageGet(STORAGE_KEY_LESSON_UNITS);
     if (unitsRaw) { state.lessonUnits = JSON.parse(unitsRaw); }
     else if (isFreshInstall) { state.lessonUnits = getDemoUnits(); saveLessonUnits(); }
     else { state.lessonUnits = []; }
@@ -1962,16 +2126,17 @@ function loadData() {
   ensureLessonUnits();
   migrateDemoLessonsIntoChapter();
   try {
-    const vocabRaw = localStorage.getItem(STORAGE_KEY_VOCAB);
+    const vocabRaw = storageGet(STORAGE_KEY_VOCAB);
     if (vocabRaw) { state.vocabulary = JSON.parse(vocabRaw); }
     else if (isFreshInstall) { state.vocabulary = getDemoVocabulary(); saveVocabulary(); }
     else { state.vocabulary = []; }
   } catch (e) { state.vocabulary = []; }
 }
 function saveVocabulary() {
-  try { localStorage.setItem(STORAGE_KEY_VOCAB, JSON.stringify(state.vocabulary)); return true; }
+  try { storageSet(STORAGE_KEY_VOCAB, JSON.stringify(state.vocabulary)); return true; }
   catch (e) {
     console.warn('Не удалось сохранить словарь:', e);
+    alert(t('saveFailed'));
     return false;
   }
 }
@@ -1991,7 +2156,7 @@ function migrateDemoLessonsIntoChapter() {
   saveLessonUnits();
 }
 function saveLessons() {
-  try { localStorage.setItem(STORAGE_KEY_LESSONS, JSON.stringify(state.lessons)); return true; }
+  try { storageSet(STORAGE_KEY_LESSONS, JSON.stringify(state.lessons)); return true; }
   catch (e) {
     console.warn('Не удалось сохранить уроки:', e);
     alert(t('saveFailed'));
@@ -1999,14 +2164,14 @@ function saveLessons() {
   }
 }
 function saveLessonUnits() {
-  try { localStorage.setItem(STORAGE_KEY_LESSON_UNITS, JSON.stringify(state.lessonUnits)); return true; }
+  try { storageSet(STORAGE_KEY_LESSON_UNITS, JSON.stringify(state.lessonUnits)); return true; }
   catch (e) {
     console.warn('Не удалось сохранить разделы уроков:', e);
     return false;
   }
 }
 function saveProgress() {
-  try { localStorage.setItem(STORAGE_KEY_PROGRESS, JSON.stringify(state.progress)); return true; }
+  try { storageSet(STORAGE_KEY_PROGRESS, JSON.stringify(state.progress)); return true; }
   catch (e) {
     console.warn('Не удалось сохранить прогресс:', e);
     alert(t('saveProgressFailed'));
@@ -2019,13 +2184,13 @@ function saveProgress() {
 // ============================================
 function loadSettings() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_SETTINGS);
+    const raw = storageGet(STORAGE_KEY_SETTINGS);
     if (raw) { state.settings = JSON.parse(raw); }
     else { state.settings = { unlockMode: 'sequential' }; saveSettings(); }
   } catch (e) { state.settings = { unlockMode: 'sequential' }; }
 }
 function saveSettings() {
-  try { localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(state.settings)); }
+  try { storageSet(STORAGE_KEY_SETTINGS, JSON.stringify(state.settings)); }
   catch (e) { console.warn('Не удалось сохранить настройки:', e); }
 }
 function setUnlockMode(mode) {
@@ -2053,7 +2218,7 @@ function isLessonUnlocked(lessonIndex) {
 // ============================================
 function loadTheme() {
   try {
-    const theme = localStorage.getItem(STORAGE_KEY_THEME);
+    const theme = storageGet(STORAGE_KEY_THEME);
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (theme === 'dark' || (!theme && prefersDark)) {
       document.body.classList.add('dark-theme');
@@ -2063,12 +2228,12 @@ function loadTheme() {
 }
 function loadLanguage() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY_LANGUAGE);
+    const saved = storageGet(STORAGE_KEY_LANGUAGE);
     if (saved && TRANSLATIONS[saved]) state.language = saved;
   } catch (e) {}
 }
 function saveLanguage() {
-  try { localStorage.setItem(STORAGE_KEY_LANGUAGE, state.language); } catch (e) {}
+  try { storageSet(STORAGE_KEY_LANGUAGE, state.language); } catch (e) {}
 }
 function setLanguage(lang) {
   if (!TRANSLATIONS[lang]) return;
@@ -2123,7 +2288,7 @@ function applyLanguage() {
 function toggleTheme() {
   document.body.classList.toggle('dark-theme');
   const isDark = document.body.classList.contains('dark-theme');
-  try { localStorage.setItem(STORAGE_KEY_THEME, isDark ? 'dark' : 'light'); } catch (e) {}
+  try { storageSet(STORAGE_KEY_THEME, isDark ? 'dark' : 'light'); } catch (e) {}
   updateThemeButton();
 }
 function updateThemeButton() {
@@ -2150,12 +2315,12 @@ function updateHeader() {
 // ============================================
 function loadStreak() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_STREAK);
+    const raw = storageGet(STORAGE_KEY_STREAK);
     state.streak = raw ? JSON.parse(raw) : { count: 0, lastDate: null };
   } catch (e) { state.streak = { count: 0, lastDate: null }; }
 }
 function saveStreak() {
-  try { localStorage.setItem(STORAGE_KEY_STREAK, JSON.stringify(state.streak)); } catch (e) {}
+  try { storageSet(STORAGE_KEY_STREAK, JSON.stringify(state.streak)); } catch (e) {}
 }
 function dayString(d) { return d.toISOString().slice(0, 10); }
 
@@ -2164,12 +2329,12 @@ function dayString(d) { return d.toISOString().slice(0, 10); }
 // ============================================
 function loadXp() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_XP);
+    const raw = storageGet(STORAGE_KEY_XP);
     state.xp = raw ? (parseInt(raw, 10) || 0) : 0;
   } catch (e) { state.xp = 0; }
 }
 function saveXp() {
-  try { localStorage.setItem(STORAGE_KEY_XP, String(state.xp)); } catch (e) {}
+  try { storageSet(STORAGE_KEY_XP, String(state.xp)); } catch (e) {}
 }
 function addXp(amount) {
   state.xp = (state.xp || 0) + amount;
@@ -2414,7 +2579,7 @@ function renderLessons() {
     state.lessons.forEach((lesson, index) => path.appendChild(buildLessonNode(lesson, index, currentIndex)));
     container.appendChild(path);
     if (document.getElementById('chapter-nav-wrap')) document.getElementById('chapter-nav-wrap').classList.add('hidden');
-    requestAnimationFrame(refreshAllLessonPathCurves);
+    requestAnimationFrame(() => { refreshAllLessonPathCurves(); scrollToCurrentLessonNode(); });
     return;
   }
   if (document.getElementById('chapter-nav-wrap')) document.getElementById('chapter-nav-wrap').classList.remove('hidden');
@@ -2473,17 +2638,22 @@ function renderLessons() {
       <div class="chapter-number">${escapeHtml(t('chapterLabel').replace('{n}', String(chapterNum + 1)))}</div>
       <div class="chapter-title">${escapeHtml(chapterTitle)}</div>
       ${chapterDesc ? `<div class="chapter-desc">${escapeHtml(chapterDesc)}</div>` : ''}
-      <button type="button" class="btn btn-small chapter-goto-btn" ${chapterLocked ? `disabled title="${escapeHtml(t('goToChapterLockedTitle'))}"` : ''}>${escapeHtml(t('goToChapterLabel'))}</button>
+      <button type="button" class="btn btn-small chapter-goto-btn">${escapeHtml(t('goToChapterLabel'))}</button>
     `;
     block.appendChild(header);
     const gotoBtn = header.querySelector('.chapter-goto-btn');
-    if (gotoBtn && !chapterLocked) {
+    if (gotoBtn) {
+      // То же самое поведение, что и у кнопки главы в верхней навигации:
+      // если глава уже доступна — просто прокручиваем к ней, иначе
+      // спрашиваем подтверждение на пропуск непройденных уроков.
       gotoBtn.addEventListener('click', () => {
         playSound('click');
-        // Переход к первому непройденному уроку главы, не ломая существующую логику скипа
-        const nextLesson = chapterLessons.find(l => !(state.progress[l.id] && state.progress[l.id].completed));
-        const lessonToOpen = nextLesson || chapterLessons[chapterLessons.length - 1];
-        startLesson(lessonToOpen.id);
+        if (isLessonUnlocked(firstIndex)) {
+          const target = document.getElementById(chapterId);
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          requestChapterSkip(firstIndex, chapterTitle, chapterId);
+        }
       });
     }
 
@@ -2498,7 +2668,14 @@ function renderLessons() {
     container.appendChild(block);
     chapterNum++;
   });
-  requestAnimationFrame(() => { refreshAllLessonPathCurves(); updateChapterNavArrows(); });
+  requestAnimationFrame(() => { refreshAllLessonPathCurves(); updateChapterNavArrows(); scrollToCurrentLessonNode(); });
+}
+
+// --- Прокрутка к «текущему» узлу (следующий непройденный урок), чтобы после
+// выхода/завершения урока не приходилось заново мотать список вручную ---
+function scrollToCurrentLessonNode() {
+  const node = document.querySelector('.lesson-node.current');
+  if (node) node.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // --- SVG-кривая между заданиями (квадратичная кривая Безье через центры .lesson-bubble) ---
@@ -3542,7 +3719,7 @@ function importStudentLessons(file) {
       const validLessons = data.lessons.filter(l => l.id && l.title && Array.isArray(l.tasks));
       if (validLessons.length === 0) { alert(t('invalidLessonsAlert')); return; }
       mergeImportedUnits(data.units);
-      mergeImportedVocabulary(data.vocabulary);
+      const vocabAdded = mergeImportedVocabulary(data.vocabulary);
       const existingIds = new Set(state.lessons.map(l => l.id));
       let added = 0, replaced = 0;
       validLessons.forEach(l => {
@@ -3555,7 +3732,7 @@ function importStudentLessons(file) {
       });
       reorderLessonsByUnits();
       saveLessons();
-      alert(t('importSuccess').replace('{added}', added).replace('{replaced}', replaced));
+      alert(t('importSuccess').replace('{added}', added).replace('{replaced}', replaced).replace('{vocab}', vocabAdded));
       renderLessons();
       showScreen('screen-lessons');
     } catch (err) { alert(t('readFileError').replace('{error}', err.message)); }
@@ -3590,10 +3767,23 @@ const callState = {
   micOn: true,
   camOn: true,
   screenSharing: false,
+  // --- Доска: список независимых "бесконечных" досок. Каждая доска хранит
+  // список объектов (штрихи/текст/картинки) в мировых координатах — то есть
+  // не привязанных к видимой области. offsetX/offsetY/scale — это ЛОКАЛЬНЫЙ
+  // просмотр каждого участника и никогда не синхронизируется собеседнику.
   boardCanvas: null,
   boardCtx: null,
+  boardTool: 'pen', // 'pen' | 'text' | 'hand'
   boardDrawing: false,
+  boardPanning: false,
   boardLast: null,
+  boards: { 'board-1': { name: 'Доска 1', items: [] } },
+  activeBoardId: 'board-1',
+  boardView: { offsetX: 0, offsetY: 0, scale: 1 },
+  activeStrokeId: null,
+  // --- Презентация ---
+  slides: [],
+  slideIndex: 0,
 };
 
 function generateCallCode() {
@@ -3663,9 +3853,62 @@ function attachCallHandlers(mediaConn) {
     document.getElementById('call-setup').classList.add('hidden');
     document.getElementById('call-room').classList.remove('hidden');
     playSound('success');
+    initLocalVideoDrag();
+    monitorConnectionQuality(mediaConn);
   });
   mediaConn.on('close', () => endCall(false));
   mediaConn.on('error', () => { setCallStatus('Звонок прерван.', true); endCall(false); });
+}
+
+// --- Индикатор качества связи (ICE-состояние соединения WebRTC) ---
+function monitorConnectionQuality(mediaConn) {
+  const pc = mediaConn && mediaConn.peerConnection;
+  const text = document.getElementById('call-connection-text');
+  const el = document.getElementById('call-connection-indicator');
+  if (!pc || !text || !el) return;
+  const update = () => {
+    const s = pc.iceConnectionState;
+    if (s === 'connected' || s === 'completed') { el.firstChild.textContent = '🟢 '; text.textContent = 'Соединено'; }
+    else if (s === 'checking' || s === 'new') { el.firstChild.textContent = '🟡 '; text.textContent = 'Подключение…'; }
+    else if (s === 'disconnected') { el.firstChild.textContent = '🟠 '; text.textContent = 'Переподключение…'; }
+    else if (s === 'failed' || s === 'closed') { el.firstChild.textContent = '🔴 '; text.textContent = 'Связь потеряна'; }
+  };
+  pc.addEventListener('iceconnectionstatechange', update);
+  update();
+}
+
+// --- Перетаскивание своего маленького видео (PIP) поверх видео собеседника ---
+function initLocalVideoDrag() {
+  const pip = document.getElementById('call-video-wrap-local');
+  const container = document.getElementById('call-videos');
+  if (!pip || !container || pip.dataset.dragInit) return;
+  pip.dataset.dragInit = '1';
+  let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
+  pip.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    pip.classList.add('dragging');
+    try { pip.setPointerCapture(e.pointerId); } catch (err) {}
+    const rect = pip.getBoundingClientRect();
+    const parentRect = container.getBoundingClientRect();
+    startLeft = rect.left - parentRect.left;
+    startTop = rect.top - parentRect.top;
+    startX = e.clientX; startY = e.clientY;
+    pip.style.right = 'auto'; pip.style.bottom = 'auto';
+    pip.style.left = startLeft + 'px'; pip.style.top = startTop + 'px';
+  });
+  pip.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const parentRect = container.getBoundingClientRect();
+    let newLeft = startLeft + (e.clientX - startX);
+    let newTop = startTop + (e.clientY - startY);
+    newLeft = Math.max(4, Math.min(newLeft, parentRect.width - pip.offsetWidth - 4));
+    newTop = Math.max(4, Math.min(newTop, parentRect.height - pip.offsetHeight - 4));
+    pip.style.left = newLeft + 'px';
+    pip.style.top = newTop + 'px';
+  });
+  function endDrag() { dragging = false; pip.classList.remove('dragging'); }
+  pip.addEventListener('pointerup', endDrag);
+  pip.addEventListener('pointercancel', endDrag);
 }
 
 async function startCallTo(rawCode) {
@@ -3707,8 +3950,15 @@ function handleIncomingData(msg) {
   if (!msg || !msg.type) return;
   if (msg.type === 'chat') appendChatMessage(msg.text, false);
   else if (msg.type === 'mic') updateRemoteMicIndicator(msg.enabled);
-  else if (msg.type === 'draw') drawRemoteStroke(msg);
-  else if (msg.type === 'clear') clearBoardLocal();
+  else if (msg.type === 'stroke-start') remoteStrokeStart(msg);
+  else if (msg.type === 'stroke-point') remoteStrokePoint(msg);
+  else if (msg.type === 'board-text') remoteBoardAddItem(msg.boardId, msg.item);
+  else if (msg.type === 'board-image') remoteBoardAddItem(msg.boardId, msg.item);
+  else if (msg.type === 'clear') { clearBoardItems(msg.boardId); if (msg.boardId === callState.activeBoardId) renderBoard(); }
+  else if (msg.type === 'board-new') remoteBoardNew(msg.boardId, msg.name);
+  else if (msg.type === 'board-switch') remoteBoardSwitch(msg.boardId);
+  else if (msg.type === 'slides-init') remoteSlidesInit(msg.slides, msg.index);
+  else if (msg.type === 'slide-change') remoteSlideChange(msg.index);
 }
 
 function updateRemoteMicIndicator(enabled) {
@@ -3739,85 +3989,401 @@ function sendChatMessage() {
   input.value = '';
 }
 
+const CALL_PANEL_IDS = ['call-chat-panel', 'call-board-panel', 'call-presentation-panel'];
 function toggleCallPanel(panelId) {
   const panel = document.getElementById(panelId);
   if (!panel) return;
-  const otherId = panelId === 'call-chat-panel' ? 'call-board-panel' : 'call-chat-panel';
-  const other = document.getElementById(otherId);
   const willShow = panel.classList.contains('hidden');
-  if (other) other.classList.add('hidden');
+  CALL_PANEL_IDS.forEach(id => { if (id !== panelId) { const p = document.getElementById(id); if (p) p.classList.add('hidden'); } });
   panel.classList.toggle('hidden', !willShow);
-  if (willShow && panelId === 'call-board-panel' && !callState.boardCanvas) initWhiteboard();
+  if (willShow && panelId === 'call-board-panel') {
+    if (!callState.boardCanvas) initWhiteboard();
+    else renderBoard();
+  }
+  if (willShow && panelId === 'call-presentation-panel') renderCurrentSlide();
 }
 
 // ------------------------------------------------
-// Общая доска: рисуем нормализованными координатами (0..1),
-// поэтому синхронизация не зависит от размера экрана каждого
-// участника — оба холста имеют фиксированное внутреннее
-// разрешение 640×360, а CSS лишь растягивает их по ширине.
+// Общая доска — теперь «бесконечная»: штрихи/текст/картинки хранятся как
+// список объектов в МИРОВЫХ координатах (не привязанных к видимой области).
+// callState.boardView (offset/scale) — это ЛОКАЛЬНЫЙ просмотр каждого
+// участника (панорамирование и масштаб не синхронизируются — так и должно
+// быть, чтобы у каждого был свой независимый вид на общую доску).
+// При любом изменении вида/содержимого делаем полный перерендер канваса.
 // ------------------------------------------------
+const _boardImageCache = {}; // dataUrl -> HTMLImageElement (кэш, чтобы не перезагружать картинку на каждый рендер)
+
+function activeBoard() {
+  if (!callState.boards[callState.activeBoardId]) callState.boards[callState.activeBoardId] = { name: 'Доска', items: [] };
+  return callState.boards[callState.activeBoardId];
+}
+function worldToScreen(x, y) {
+  const v = callState.boardView;
+  return { x: (x - v.offsetX) * v.scale, y: (y - v.offsetY) * v.scale };
+}
+function screenToWorld(x, y) {
+  const v = callState.boardView;
+  return { x: x / v.scale + v.offsetX, y: y / v.scale + v.offsetY };
+}
+function posFromEvent(e, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = (e.clientX - rect.left) / rect.width * canvas.width;
+  const sy = (e.clientY - rect.top) / rect.height * canvas.height;
+  return screenToWorld(sx, sy);
+}
+
 function initWhiteboard() {
   const canvas = document.getElementById('call-board-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   callState.boardCanvas = canvas;
   callState.boardCtx = ctx;
+  refreshBoardSelect();
+  renderBoard();
 
-  function posFromEvent(e) {
-    const rect = canvas.getBoundingClientRect();
-    return { x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height };
-  }
-  function drawSegment(x0, y0, x1, y1, color, width) {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(x0 * canvas.width, y0 * canvas.height);
-    ctx.lineTo(x1 * canvas.width, y1 * canvas.height);
-    ctx.stroke();
-  }
+  let panStart = null;
   canvas.addEventListener('pointerdown', (e) => {
-    callState.boardDrawing = true;
-    callState.boardLast = posFromEvent(e);
     canvas.setPointerCapture(e.pointerId);
+    const worldPos = posFromEvent(e, canvas);
+    if (callState.boardTool === 'hand') {
+      callState.boardPanning = true;
+      const rect = canvas.getBoundingClientRect();
+      panStart = { screenX: (e.clientX - rect.left) / rect.width * canvas.width, screenY: (e.clientY - rect.top) / rect.height * canvas.height, offsetX: callState.boardView.offsetX, offsetY: callState.boardView.offsetY };
+    } else if (callState.boardTool === 'text') {
+      openBoardTextInput(canvas, worldPos, e);
+    } else {
+      callState.boardDrawing = true;
+      const id = generateId();
+      const color = document.getElementById('board-color').value;
+      const width = parseInt(document.getElementById('board-width').value, 10) || 3;
+      const item = { id, type: 'stroke', color, width, points: [worldPos] };
+      callState.activeStrokeId = id;
+      activeBoard().items.push(item);
+      sendData({ type: 'stroke-start', boardId: callState.activeBoardId, item: { id, color, width, points: [worldPos] } });
+      callState.boardLast = worldPos;
+    }
   });
   canvas.addEventListener('pointermove', (e) => {
+    if (callState.boardPanning && panStart) {
+      const rect = canvas.getBoundingClientRect();
+      const screenX = (e.clientX - rect.left) / rect.width * canvas.width;
+      const screenY = (e.clientY - rect.top) / rect.height * canvas.height;
+      callState.boardView.offsetX = panStart.offsetX - (screenX - panStart.screenX) / callState.boardView.scale;
+      callState.boardView.offsetY = panStart.offsetY - (screenY - panStart.screenY) / callState.boardView.scale;
+      renderBoard();
+      return;
+    }
     if (!callState.boardDrawing || !callState.boardLast) return;
-    const pos = posFromEvent(e);
+    const pos = posFromEvent(e, canvas);
     const color = document.getElementById('board-color').value;
     const width = parseInt(document.getElementById('board-width').value, 10) || 3;
-    drawSegment(callState.boardLast.x, callState.boardLast.y, pos.x, pos.y, color, width);
-    sendData({ type: 'draw', x0: callState.boardLast.x, y0: callState.boardLast.y, x1: pos.x, y1: pos.y, color, width });
+    const item = activeBoard().items.find(it => it.id === callState.activeStrokeId);
+    if (item) item.points.push(pos);
+    drawSegmentWorld(ctx, canvas, callState.boardLast, pos, color, width);
+    sendData({ type: 'stroke-point', boardId: callState.activeBoardId, strokeId: callState.activeStrokeId, point: pos });
     callState.boardLast = pos;
   });
-  function endStroke() { callState.boardDrawing = false; callState.boardLast = null; }
+  function endStroke() { callState.boardDrawing = false; callState.boardLast = null; callState.activeStrokeId = null; callState.boardPanning = false; panStart = null; }
   canvas.addEventListener('pointerup', endStroke);
   canvas.addEventListener('pointerleave', endStroke);
   canvas.addEventListener('pointercancel', endStroke);
+
+  // Масштаб колесом мыши (только локально, не синхронизируется)
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const sx = (e.clientX - rect.left) / rect.width * canvas.width;
+    const sy = (e.clientY - rect.top) / rect.height * canvas.height;
+    const worldBefore = screenToWorld(sx, sy);
+    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+    callState.boardView.scale = Math.max(0.3, Math.min(4, callState.boardView.scale * factor));
+    const worldAfter = screenToWorld(sx, sy);
+    callState.boardView.offsetX += worldBefore.x - worldAfter.x;
+    callState.boardView.offsetY += worldBefore.y - worldAfter.y;
+    renderBoard();
+  }, { passive: false });
+
+  // Вставка картинки: Ctrl+V, пока открыта панель доски
+  if (!window._boardPasteListenerAdded) { document.addEventListener('paste', handleBoardPaste); window._boardPasteListenerAdded = true; }
+  // Перетаскивание файла на канвас
+  canvas.addEventListener('dragover', (e) => { e.preventDefault(); });
+  canvas.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+    if (files.length) loadImageFileToBoard(files[0], posFromEvent(e, canvas));
+  });
 }
 
-function drawRemoteStroke(msg) {
-  const canvas = callState.boardCanvas;
-  const ctx = callState.boardCtx;
-  if (!canvas || !ctx) return;
-  ctx.strokeStyle = msg.color;
-  ctx.lineWidth = msg.width;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(msg.x0 * canvas.width, msg.y0 * canvas.height);
-  ctx.lineTo(msg.x1 * canvas.width, msg.y1 * canvas.height);
-  ctx.stroke();
-}
-
-function clearBoardLocal() {
-  if (callState.boardCtx && callState.boardCanvas) {
-    callState.boardCtx.clearRect(0, 0, callState.boardCanvas.width, callState.boardCanvas.height);
+function handleBoardPaste(e) {
+  const panel = document.getElementById('call-board-panel');
+  if (!panel || panel.classList.contains('hidden')) return;
+  const items = (e.clipboardData && e.clipboardData.items) || [];
+  for (const it of items) {
+    if (it.type && it.type.startsWith('image/')) {
+      const file = it.getAsFile();
+      if (file) { loadImageFileToBoard(file, { x: callState.boardView.offsetX + 100, y: callState.boardView.offsetY + 100 }); }
+      e.preventDefault();
+      break;
+    }
   }
 }
 
+function loadImageFileToBoard(file, worldPos) {
+  if (file.size > 4 * 1024 * 1024) {
+    alert('Картинка слишком большая (максимум 4 МБ) — уменьшите размер файла.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 260;
+      const w = Math.min(maxW, img.naturalWidth);
+      const h = w * (img.naturalHeight / img.naturalWidth);
+      const item = { id: generateId(), type: 'image', x: worldPos.x, y: worldPos.y, w, h, dataUrl };
+      activeBoard().items.push(item);
+      _boardImageCache[dataUrl] = img;
+      renderBoard();
+      sendData({ type: 'board-image', boardId: callState.activeBoardId, item });
+    };
+    img.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+function openBoardTextInput(canvas, worldPos, e) {
+  const wrap = document.getElementById('call-board-canvas-wrap');
+  if (!wrap) return;
+  const existing = wrap.querySelector('.board-text-input');
+  if (existing) existing.remove();
+  const rect = canvas.getBoundingClientRect();
+  const input = document.createElement('textarea');
+  input.className = 'board-text-input';
+  input.style.left = (e.clientX - rect.left) + 'px';
+  input.style.top = (e.clientY - rect.top) + 'px';
+  input.rows = 1;
+  wrap.appendChild(input);
+  input.focus();
+  const commit = () => {
+    const text = input.value.trim();
+    input.remove();
+    if (!text) return;
+    const color = document.getElementById('board-color').value;
+    const size = 18;
+    const item = { id: generateId(), type: 'text', x: worldPos.x, y: worldPos.y, text, color, size };
+    activeBoard().items.push(item);
+    renderBoard();
+    sendData({ type: 'board-text', boardId: callState.activeBoardId, item });
+  };
+  input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); commit(); } });
+  input.addEventListener('blur', commit);
+}
+
+function drawSegmentWorld(ctx, canvas, worldFrom, worldTo, color, width) {
+  const a = worldToScreen(worldFrom.x, worldFrom.y);
+  const b = worldToScreen(worldTo.x, worldTo.y);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width * callState.boardView.scale;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
+}
+
+// Полный перерендер видимой доски из списка объектов (после пана/зума/новых элементов)
+function renderBoard() {
+  const canvas = callState.boardCanvas;
+  const ctx = callState.boardCtx;
+  if (!canvas || !ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const items = activeBoard().items;
+  items.forEach(item => {
+    if (item.type === 'stroke') {
+      if (item.points.length < 2) return;
+      ctx.strokeStyle = item.color;
+      ctx.lineWidth = item.width * callState.boardView.scale;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      const first = worldToScreen(item.points[0].x, item.points[0].y);
+      ctx.moveTo(first.x, first.y);
+      for (let i = 1; i < item.points.length; i++) {
+        const p = worldToScreen(item.points[i].x, item.points[i].y);
+        ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+    } else if (item.type === 'text') {
+      const p = worldToScreen(item.x, item.y);
+      ctx.fillStyle = item.color;
+      ctx.font = `700 ${item.size * callState.boardView.scale}px "Nunito", sans-serif`;
+      ctx.textBaseline = 'top';
+      ctx.fillText(item.text, p.x, p.y);
+    } else if (item.type === 'image') {
+      const p = worldToScreen(item.x, item.y);
+      let img = _boardImageCache[item.dataUrl];
+      if (!img) {
+        img = new Image();
+        img.src = item.dataUrl;
+        _boardImageCache[item.dataUrl] = img;
+        img.onload = () => renderBoard();
+        return;
+      }
+      if (img.complete) ctx.drawImage(img, p.x, p.y, item.w * callState.boardView.scale, item.h * callState.boardView.scale);
+    }
+  });
+}
+
+function clearBoardItems(boardId) {
+  if (callState.boards[boardId]) callState.boards[boardId].items = [];
+}
 function clearBoard() {
-  clearBoardLocal();
-  sendData({ type: 'clear' });
+  clearBoardItems(callState.activeBoardId);
+  renderBoard();
+  sendData({ type: 'clear', boardId: callState.activeBoardId });
+}
+
+function setBoardTool(tool) {
+  callState.boardTool = tool;
+  document.querySelectorAll('.board-tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
+  const wrap = document.getElementById('call-board-canvas-wrap');
+  if (wrap) { wrap.classList.toggle('tool-hand', tool === 'hand'); wrap.classList.toggle('tool-text', tool === 'text'); }
+}
+
+function refreshBoardSelect() {
+  const sel = document.getElementById('board-select');
+  if (!sel) return;
+  sel.innerHTML = Object.keys(callState.boards).map(id =>
+    `<option value="${escapeHtml(id)}" ${id === callState.activeBoardId ? 'selected' : ''}>${escapeHtml(callState.boards[id].name)}</option>`
+  ).join('');
+}
+
+function switchBoard(boardId, broadcast) {
+  if (!callState.boards[boardId]) callState.boards[boardId] = { name: 'Доска', items: [] };
+  callState.activeBoardId = boardId;
+  callState.boardView = { offsetX: 0, offsetY: 0, scale: 1 };
+  refreshBoardSelect();
+  renderBoard();
+  if (broadcast) sendData({ type: 'board-switch', boardId });
+}
+
+function createNewBoard() {
+  const n = Object.keys(callState.boards).length + 1;
+  const name = prompt('Название новой доски:', 'Доска ' + n) || ('Доска ' + n);
+  const id = 'board-' + generateId();
+  callState.boards[id] = { name, items: [] };
+  sendData({ type: 'board-new', boardId: id, name });
+  switchBoard(id, true);
+}
+
+// --- Обработка данных от собеседника, относящихся к доске ---
+function remoteStrokeStart(msg) {
+  if (!callState.boards[msg.boardId]) callState.boards[msg.boardId] = { name: 'Доска', items: [] };
+  callState.boards[msg.boardId].items.push({ id: msg.item.id, type: 'stroke', color: msg.item.color, width: msg.item.width, points: msg.item.points.slice() });
+}
+function remoteStrokePoint(msg) {
+  const board = callState.boards[msg.boardId];
+  if (!board) return;
+  const item = board.items.find(it => it.id === msg.strokeId);
+  if (!item) return;
+  const prev = item.points[item.points.length - 1];
+  item.points.push(msg.point);
+  if (msg.boardId === callState.activeBoardId && callState.boardCanvas && prev) {
+    drawSegmentWorld(callState.boardCtx, callState.boardCanvas, prev, msg.point, item.color, item.width);
+  }
+}
+function remoteBoardAddItem(boardId, item) {
+  if (!item) return;
+  if (!callState.boards[boardId]) callState.boards[boardId] = { name: 'Доска', items: [] };
+  callState.boards[boardId].items.push(item);
+  if (boardId === callState.activeBoardId) renderBoard();
+}
+function remoteBoardNew(boardId, name) {
+  if (!callState.boards[boardId]) callState.boards[boardId] = { name: name || 'Доска', items: [] };
+  refreshBoardSelect();
+}
+function remoteBoardSwitch(boardId) {
+  if (!document.getElementById('call-board-panel')) return;
+  switchBoard(boardId, false);
+}
+
+// ------------------------------------------------
+// Презентации: PDF рендерится постранично в картинки через pdf.js (без
+// сервера — прямо в браузере), обычные картинки принимаются как есть.
+// Текущий слайд рассылается собеседнику через тот же data-канал.
+// ------------------------------------------------
+function addImageSlide(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => { callState.slides.push(e.target.result); resolve(); };
+    reader.onerror = () => resolve();
+    reader.readAsDataURL(file);
+  });
+}
+async function addPdfSlides(file) {
+  if (!window.pdfjsLib) { alert('Модуль чтения PDF не загрузился — проверьте подключение к интернету и обновите страницу.'); return; }
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale: 1.5 });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    callState.slides.push(canvas.toDataURL('image/jpeg', 0.82));
+  }
+}
+async function handlePresentationUpload(fileList) {
+  const files = Array.from(fileList || []);
+  if (files.length === 0) return;
+  const btn = document.getElementById('btn-presentation-upload');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Обработка...'; }
+  try {
+    for (const file of files) {
+      if (file.type === 'application/pdf') await addPdfSlides(file);
+      else if (file.type.startsWith('image/')) await addImageSlide(file);
+    }
+    renderCurrentSlide();
+    broadcastSlides();
+  } catch (e) {
+    alert('Не удалось обработать файл: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Загрузить PDF/картинки'; }
+  }
+}
+function renderCurrentSlide() {
+  const img = document.getElementById('presentation-slide-img');
+  const hint = document.getElementById('presentation-empty-hint');
+  const counter = document.getElementById('presentation-slide-counter');
+  if (!img || !hint || !counter) return;
+  if (callState.slides.length === 0) {
+    img.classList.add('hidden'); hint.classList.remove('hidden');
+    counter.textContent = '0 / 0';
+    return;
+  }
+  hint.classList.add('hidden');
+  img.classList.remove('hidden');
+  img.src = callState.slides[callState.slideIndex];
+  counter.textContent = (callState.slideIndex + 1) + ' / ' + callState.slides.length;
+}
+function presentationPrev() {
+  if (callState.slideIndex > 0) { callState.slideIndex--; renderCurrentSlide(); sendData({ type: 'slide-change', index: callState.slideIndex }); }
+}
+function presentationNext() {
+  if (callState.slideIndex < callState.slides.length - 1) { callState.slideIndex++; renderCurrentSlide(); sendData({ type: 'slide-change', index: callState.slideIndex }); }
+}
+function broadcastSlides() {
+  sendData({ type: 'slides-init', slides: callState.slides, index: callState.slideIndex });
+}
+function remoteSlidesInit(slides, index) {
+  callState.slides = slides || [];
+  callState.slideIndex = index || 0;
+  renderCurrentSlide();
+}
+function remoteSlideChange(index) {
+  if (typeof index === 'number') { callState.slideIndex = index; renderCurrentSlide(); }
 }
 
 function toggleMic() {
@@ -3887,10 +4453,21 @@ function endCall(userInitiated) {
   const lv = document.getElementById('call-local-video'); if (lv) lv.srcObject = null;
   const rv = document.getElementById('call-remote-video'); if (rv) rv.srcObject = null;
   const muteIcon = document.getElementById('call-remote-mute-icon'); if (muteIcon) muteIcon.classList.add('hidden');
+  const pip = document.getElementById('call-video-wrap-local');
+  if (pip) { pip.removeAttribute('style'); delete pip.dataset.dragInit; }
+  const connText = document.getElementById('call-connection-text'); if (connText) connText.textContent = 'Соединено';
   const chatBox = document.getElementById('call-chat-messages'); if (chatBox) chatBox.innerHTML = '';
   const chatPanel = document.getElementById('call-chat-panel'); if (chatPanel) chatPanel.classList.add('hidden');
   const boardPanel = document.getElementById('call-board-panel'); if (boardPanel) boardPanel.classList.add('hidden');
-  clearBoardLocal();
+  const presentationPanel = document.getElementById('call-presentation-panel'); if (presentationPanel) presentationPanel.classList.add('hidden');
+  callState.boards = { 'board-1': { name: 'Доска 1', items: [] } };
+  callState.activeBoardId = 'board-1';
+  callState.boardView = { offsetX: 0, offsetY: 0, scale: 1 };
+  callState.boardCanvas = null;
+  callState.boardCtx = null;
+  callState.slides = [];
+  callState.slideIndex = 0;
+  renderCurrentSlide();
   if (userInitiated) setCallStatus('Звонок завершён.');
 }
 
@@ -3960,12 +4537,38 @@ function init() {
   document.getElementById('btn-end-call').addEventListener('click', () => { playSound('click'); endCall(true); });
   document.getElementById('btn-toggle-chat').addEventListener('click', () => { playSound('click'); toggleCallPanel('call-chat-panel'); });
   document.getElementById('btn-toggle-board').addEventListener('click', () => { playSound('click'); toggleCallPanel('call-board-panel'); });
+  document.getElementById('btn-toggle-presentation').addEventListener('click', () => { playSound('click'); toggleCallPanel('call-presentation-panel'); });
   document.getElementById('btn-chat-send').addEventListener('click', () => { sendChatMessage(); });
   document.getElementById('call-chat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); } });
   document.getElementById('btn-board-clear').addEventListener('click', () => { playSound('click'); clearBoard(); });
+  document.querySelectorAll('.board-tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => { playSound('click'); setBoardTool(btn.dataset.tool); });
+  });
+  document.getElementById('btn-board-image').addEventListener('click', () => { document.getElementById('board-image-input').click(); });
+  document.getElementById('board-image-input').addEventListener('change', (e) => {
+    if (e.target.files.length > 0) { loadImageFileToBoard(e.target.files[0], { x: callState.boardView.offsetX + 100, y: callState.boardView.offsetY + 100 }); }
+    e.target.value = '';
+  });
+  document.getElementById('board-select').addEventListener('change', (e) => { playSound('click'); switchBoard(e.target.value, true); });
+  document.getElementById('btn-board-new').addEventListener('click', () => { playSound('click'); createNewBoard(); });
+  document.getElementById('btn-presentation-upload').addEventListener('click', () => { document.getElementById('presentation-file-input').click(); });
+  document.getElementById('presentation-file-input').addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handlePresentationUpload(e.target.files);
+    e.target.value = '';
+  });
+  document.getElementById('btn-presentation-prev').addEventListener('click', () => { playSound('click'); presentationPrev(); });
+  document.getElementById('btn-presentation-next').addEventListener('click', () => { playSound('click'); presentationNext(); });
+  document.querySelectorAll('.call-panel-close').forEach(btn => {
+    btn.addEventListener('click', () => { playSound('click'); document.getElementById(btn.dataset.closePanel).classList.add('hidden'); });
+  });
+  let _vocabSearchTimer = null;
   document.getElementById('vocab-search').addEventListener('input', (e) => {
-    state.vocabSearchTerm = e.target.value.trim();
-    renderVocabularyScreen();
+    const val = e.target.value;
+    clearTimeout(_vocabSearchTimer);
+    _vocabSearchTimer = setTimeout(() => {
+      state.vocabSearchTerm = val.trim();
+      renderVocabularyScreen();
+    }, 200);
   });
   document.querySelectorAll('.vocab-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => { playSound('click'); setVocabFilterMode(btn.dataset.mode); });
@@ -3988,7 +4591,7 @@ function init() {
 
 // Закрытие модалки по клику на фон
 document.getElementById('modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeModal(); });
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => { initStorage().then(init); });
 </script>
 </body>
 </html>
