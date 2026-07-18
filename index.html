@@ -1125,6 +1125,9 @@ const TRANSLATIONS = {
     addTaskLabel: '➕ Добавить задание',
     saveLessonLabel: '💾 Сохранить урок',
     cancelLabel: 'Отмена',
+    addLabel: 'Добавить',
+    boardTextModalTitle: 'Текст на доске',
+    boardTextPlaceholder: 'Введите текст...',
     editLessonTitle: 'Редактирование урока',
     lessonTasksTitle: 'Задания',
     lessonIconLabel: 'Иконка (emoji)',
@@ -1321,6 +1324,9 @@ const TRANSLATIONS = {
     editLessonTitle: '编辑课程',
     lessonTasksTitle: '任务',
     lessonIconLabel: '图标（emoji）',
+    addLabel: '添加',
+    boardTextModalTitle: '白板文字',
+    boardTextPlaceholder: '输入文字...',
     lessonTitleLabel: '课程名称',
     lessonDescriptionLabel: '说明',
     lessonTypeLabel: '任务类型',
@@ -1514,6 +1520,9 @@ const TRANSLATIONS = {
     lessonTitleLabel: 'Lesson title',
     lessonDescriptionLabel: 'Description',
     lessonTypeLabel: 'Task type',
+    addLabel: 'Add',
+    boardTextModalTitle: 'Board text',
+    boardTextPlaceholder: 'Enter text...',
     lessonQuestionLabel: 'Question / instruction',
     lessonChineseLabel: 'Chinese text / character',
     lessonOptionsLabel: 'Answer options',
@@ -1768,6 +1777,7 @@ function getDemoData() {
       icon: '👋',
       unitId: 'unit-demo',
       tasks: [
+        { id: 'h1-t0', type: 'flashcard', chinese: '你好', pinyin: 'nǐ hǎo', translation: 'Привет / Здравствуйте', example: '你好，我是学生。', exampleTranslation: 'Здравствуйте, я студент.' },
         { id: 'h1-t1', type: 'translate', question: 'Выберите правильный перевод:', chinese: '你好', options: ['Привет', 'До свидания', 'Спасибо', 'Извините'], correct: 'Привет' },
         { id: 'h1-t2', type: 'image', question: 'Что означает этот жест?', emoji: '👋', options: ['你好', '再见', '谢谢', '对不起'], correct: '你好' },
         { id: 'h1-t3', type: 'match', question: 'Сопоставьте иероглифы с пиньинем:', pairs: [{ left: '你', right: 'nǐ' }, { left: '好', right: 'hǎo' }, { left: '是', right: 'shì' }] },
@@ -4234,24 +4244,20 @@ function loadImageFileToBoard(file, worldPos) {
 }
 
 function openBoardTextInput(canvas, worldPos, e) {
-  const wrap = document.getElementById('call-board-canvas-wrap');
-  if (!wrap) return;
-  const existing = wrap.querySelector('.board-text-input');
-  if (existing) existing.remove();
-  const rect = canvas.getBoundingClientRect();
-  const input = document.createElement('textarea');
-  input.className = 'board-text-input';
-  input.style.left = (e.clientX - rect.left) + 'px';
-  input.style.top = (e.clientY - rect.top) + 'px';
-  input.rows = 1;
-  wrap.appendChild(input);
+  showModal(
+    t('boardTextModalTitle'),
+    `<input type="text" id="board-text-modal-input" placeholder="${escapeHtml(t('boardTextPlaceholder'))}" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:12px 14px;border:2px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font);font-size:1rem;font-weight:600;background:var(--bg);color:var(--text);margin-top:10px;">`,
+    `<button type="button" class="btn btn-secondary btn-small" id="btn-board-text-cancel">${escapeHtml(t('cancelLabel'))}</button>
+     <button type="button" class="btn btn-primary btn-small" id="btn-board-text-add">${escapeHtml(t('addLabel'))}</button>`
+  );
+  const input = document.getElementById('board-text-modal-input');
   input.focus();
   let committed = false;
   const commit = () => {
     if (committed) return;
     committed = true;
     const text = input.value.trim();
-    input.remove();
+    closeModal();
     if (!text) return;
     const color = document.getElementById('board-color').value;
     const size = 18;
@@ -4260,8 +4266,9 @@ function openBoardTextInput(canvas, worldPos, e) {
     renderBoard();
     sendData({ type: 'board-text', boardId: callState.activeBoardId, item });
   };
-  input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); commit(); } });
-  input.addEventListener('blur', commit);
+  document.getElementById('btn-board-text-add').addEventListener('click', () => { playSound('click'); commit(); });
+  document.getElementById('btn-board-text-cancel').addEventListener('click', () => { playSound('click'); committed = true; closeModal(); });
+  input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); commit(); } });
 }
 
 function drawSegmentWorld(ctx, canvas, worldFrom, worldTo, color, width) {
