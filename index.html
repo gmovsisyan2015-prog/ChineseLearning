@@ -400,6 +400,24 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 .task-image img { max-width: 210px; max-height: 210px; border-radius: var(--radius); object-fit: contain; border: 1px solid var(--border); box-shadow: var(--shadow); }
 .task-image .emoji-placeholder { font-size: 5.2rem; line-height: 1; animation: floatY 3.5s ease-in-out infinite; display: inline-block; }
 
+/* --- Карточка-памятка (новое слово) --- */
+.flashcard {
+  background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
+  padding: 32px 24px; text-align: center; box-shadow: var(--shadow); animation: pop 0.35s var(--ease-back);
+  margin-bottom: 22px;
+}
+.flashcard-badge {
+  display: inline-block; background: var(--blue-soft); color: var(--blue-dark); font-weight: 800;
+  font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 14px;
+  border-radius: 20px; margin-bottom: 18px;
+}
+.flashcard-chinese { font-size: 3rem; font-weight: 800; line-height: 1.15; margin-bottom: 6px; }
+.flashcard-pinyin { font-size: 1.15rem; color: var(--text-light); font-weight: 700; margin-bottom: 10px; }
+.flashcard-translation { font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 18px; }
+.flashcard-example-wrap { border-top: 1.5px dashed var(--border); padding-top: 16px; margin-top: 6px; }
+.flashcard-example { font-size: 1.15rem; font-weight: 600; margin-bottom: 4px; }
+.flashcard-example-translation { font-size: 0.92rem; color: var(--text-light); }
+
 /* --- Сопоставление --- */
 .match-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 26px; }
 .match-col { display: flex; flex-direction: column; gap: 10px; }
@@ -1149,6 +1167,7 @@ const TRANSLATIONS = {
     addItemLabel: '➕ Добавить',
     removeLabel: '✕',
     trueLabel: 'Правда',
+    flashcardNewWordLabel: 'Новое слово',
     falseLabel: 'Ложь',
     checkLabel: '✓ Проверить',
     nextLabel: '→ Далее',
@@ -1341,6 +1360,7 @@ const TRANSLATIONS = {
     addItemLabel: '➕ 添加',
     removeLabel: '✕',
     trueLabel: '对',
+    flashcardNewWordLabel: '生词',
     falseLabel: '错',
     checkLabel: '✓ 检查',
     nextLabel: '→ 下一步',
@@ -1530,6 +1550,7 @@ const TRANSLATIONS = {
     addItemLabel: '➕ Add',
     removeLabel: '✕',
     trueLabel: 'True',
+    flashcardNewWordLabel: 'New word',
     falseLabel: 'False',
     checkLabel: '✓ Check',
     nextLabel: '→ Next',
@@ -2847,12 +2868,14 @@ function renderTask() {
   btnNext.disabled = false;
   btnNext.textContent = t('nextLabel');
   container.innerHTML = '';
-  const question = document.createElement('div');
-  question.className = 'question';
-  question.innerHTML = `<div class="hint">${escapeHtml(task.question)}</div>`;
-  if (task.chinese) { question.innerHTML += `<span class="chinese" lang="zh">${escapeHtml(task.chinese)}</span>`; }
-  if (task.statement) { question.innerHTML += `<span class="chinese">${escapeHtml(task.statement)}</span>`; }
-  container.appendChild(question);
+  if (task.type !== 'flashcard') {
+    const question = document.createElement('div');
+    question.className = 'question';
+    question.innerHTML = `<div class="hint">${escapeHtml(task.question)}</div>`;
+    if (task.chinese) { question.innerHTML += `<span class="chinese" lang="zh">${escapeHtml(task.chinese)}</span>`; }
+    if (task.statement) { question.innerHTML += `<span class="chinese">${escapeHtml(task.statement)}</span>`; }
+    container.appendChild(question);
+  }
   switch (task.type) {
     case 'translate': renderTranslateTask(container, task); break;
     case 'image': renderImageTask(container, task); break;
@@ -2867,7 +2890,33 @@ function renderTask() {
     case 'tone': renderToneTask(container, task); break;
     case 'dictation': renderDictationTask(container, task); break;
     case 'transcription-tf': renderTranscriptionTFTask(container, task); break;
+    case 'flashcard': renderFlashcardTask(container, task); break;
   }
+  if (task.type === 'flashcard') {
+    // Карточка-памятка — не вопрос, а просто показ нового слова: не требует
+    // проверки, засчитывается как пройденная сразу и не портит процент урока
+    state.answers[state.currentTaskIndex] = { value: null, isCorrect: true };
+    btnCheck.classList.add('hidden');
+    btnNext.classList.remove('hidden');
+  }
+}
+
+// --- Карточка-памятка: новое слово/фраза + перевод + пример, без вопроса.
+// В таком формате Duolingo показывает новую лексику перед упражнениями. ---
+function renderFlashcardTask(container, task) {
+  const card = document.createElement('div');
+  card.className = 'flashcard';
+  card.innerHTML = `
+    <div class="flashcard-badge">${escapeHtml(t('flashcardNewWordLabel'))}</div>
+    <div class="flashcard-chinese" lang="zh">${escapeHtml(task.chinese || '')}</div>
+    ${task.pinyin ? `<div class="flashcard-pinyin">${escapeHtml(task.pinyin)}</div>` : ''}
+    <div class="flashcard-translation">${escapeHtml(task.translation || '')}</div>
+    ${task.example ? `<div class="flashcard-example-wrap">
+      <div class="flashcard-example" lang="zh">${escapeHtml(task.example)}</div>
+      ${task.exampleTranslation ? `<div class="flashcard-example-translation">${escapeHtml(task.exampleTranslation)}</div>` : ''}
+    </div>` : ''}
+  `;
+  container.appendChild(card);
 }
 
 // --- Общий хелпер: список кнопок-вариантов с выбором одного ---
@@ -4071,15 +4120,19 @@ function initWhiteboard() {
 
   let panStart = null;
   canvas.addEventListener('pointerdown', (e) => {
-    canvas.setPointerCapture(e.pointerId);
     const worldPos = posFromEvent(e, canvas);
     if (callState.boardTool === 'hand') {
+      canvas.setPointerCapture(e.pointerId);
       callState.boardPanning = true;
       const rect = canvas.getBoundingClientRect();
       panStart = { screenX: (e.clientX - rect.left) / rect.width * canvas.width, screenY: (e.clientY - rect.top) / rect.height * canvas.height, offsetX: callState.boardView.offsetX, offsetY: callState.boardView.offsetY };
     } else if (callState.boardTool === 'text') {
+      // Важно: НЕ захватываем указатель здесь — иначе canvas продолжает
+      // перехватывать события поверх текстового поля, и ввод с клавиатуры
+      // (особенно на мобильных) не срабатывает.
       openBoardTextInput(canvas, worldPos, e);
     } else {
+      canvas.setPointerCapture(e.pointerId);
       callState.boardDrawing = true;
       const id = generateId();
       const color = document.getElementById('board-color').value;
@@ -4193,7 +4246,10 @@ function openBoardTextInput(canvas, worldPos, e) {
   input.rows = 1;
   wrap.appendChild(input);
   input.focus();
+  let committed = false;
   const commit = () => {
+    if (committed) return;
+    committed = true;
     const text = input.value.trim();
     input.remove();
     if (!text) return;
