@@ -578,16 +578,6 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 .fab-scroll-top.hidden { opacity: 0; transform: translateY(12px); pointer-events: none; display: flex; }
 @media (prefers-reduced-motion: reduce) { .fab-scroll-top { transition: none; } }
 
-/* --- FAB «Обратная связь» --- */
-.fab-feedback {
-  position: fixed; left: 20px; bottom: 20px; z-index: 60; width: 52px; height: 52px; border-radius: 50%;
-  border: none; background: linear-gradient(155deg, var(--jade), var(--jade-hover)); color: #fff; font-size: 1.3rem; cursor: pointer;
-  box-shadow: 0 8px 22px -6px var(--jade-glow);
-  display: flex; align-items: center; justify-content: center;
-  transition: transform 0.15s var(--ease-back);
-}
-.fab-feedback:hover { transform: scale(1.06); }
-.fab-feedback:active { transform: scale(0.94); }
 .feedback-list { display: flex; flex-direction: column; gap: 12px; margin: 14px 0; }
 .feedback-item {
   display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm);
@@ -777,6 +767,31 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
   font-size: 0.78rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; pointer-events: none;
 }
 .call-video-wrap-local .call-video-label { font-size: 0.68rem; padding: 2px 7px; left: 5px; bottom: 5px; }
+
+/* --- Режим «доска/презентация»: собственное видео и видео собеседника
+   уступают место общей доске/слайдам, становятся компактной полоской.
+   Своё видео по умолчанию сворачивается в кружок, разворачивается по клику. --- */
+.call-room.board-focus .call-videos {
+  max-width: 300px; margin: 0 auto 14px; transition: max-width 0.25s var(--ease);
+}
+.call-room.board-focus .call-video-wrap-local {
+  width: 40px; height: 40px; aspect-ratio: 1/1; border-radius: 50%; right: 6px; bottom: 6px;
+  transition: width 0.25s var(--ease), height 0.25s var(--ease), border-radius 0.25s var(--ease);
+}
+.call-room.board-focus .call-video-wrap-local .call-video-label { display: none; }
+.call-room.board-focus .call-video-wrap-local::after {
+  content: '⤢'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 0.85rem; text-shadow: 0 1px 3px rgba(0,0,0,0.7); pointer-events: none;
+}
+.call-room.board-focus .call-video-wrap-local.expanded {
+  width: 34%; max-width: 150px; aspect-ratio: 4/3; border-radius: 12px;
+}
+.call-room.board-focus .call-video-wrap-local.expanded .call-video-label { display: block; }
+.call-room.board-focus .call-video-wrap-local.expanded::after { content: '⤡'; font-size: 1rem; }
+.call-room.board-focus .call-panel { box-shadow: var(--shadow-lg); }
+@media (min-width: 700px) {
+  .call-room.board-focus .call-videos { max-width: 340px; }
+}
 .call-connection-indicator {
   position: absolute; left: 12px; top: 12px; z-index: 6; background: rgba(0,0,0,0.55); color: #fff;
   font-size: 0.78rem; font-weight: 700; padding: 5px 10px; border-radius: 20px; display: flex; align-items: center; gap: 5px;
@@ -868,6 +883,48 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 @media (min-width: 768px) {
   .app { padding: 0 24px; }
 }
+/* --- Десктоп: больше воздуха и чуть крупнее базовый текст, раз есть место --- */
+@media (min-width: 900px) {
+  .app { max-width: 880px; }
+  html:not(.text-size-sm):not(.text-size-lg):not(.text-size-xl) { font-size: 17px; }
+  .header { padding: 22px 4px; }
+}
+@media (min-width: 1200px) {
+  .app { max-width: 960px; }
+}
+
+/* --- Нижняя навигация (мобильные устройства) в духе Duolingo:
+   на телефоне переносим основные разделы вниз экрана, под большой палец,
+   а из шапки на мобильном оставляем только лого и бейджи. Скрывается при
+   скролле вниз и появляется обратно при скролле вверх. --- */
+.bottom-nav {
+  display: none;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+  background: var(--surface); border-top: 1px solid var(--border);
+  box-shadow: 0 -6px 20px -10px rgba(0,0,0,0.25);
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+  transition: transform 0.25s var(--ease);
+}
+.bottom-nav.nav-hidden { transform: translateY(100%); }
+.bottom-nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; background: none; border: none; color: var(--text-light); cursor: pointer;
+  padding: 7px 4px 5px; border-radius: 12px; font-family: inherit;
+}
+.bottom-nav-btn .bnav-icon { font-size: 1.4rem; line-height: 1; }
+.bottom-nav-btn .bnav-label { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.01em; }
+.bottom-nav-btn.active { color: var(--jade); }
+.bottom-nav-btn:active { transform: scale(0.94); }
+
+@media (max-width: 768px) {
+  .bottom-nav { display: flex; }
+  .header .header-actions #btn-home,
+  .header .header-actions #btn-vocabulary-nav,
+  .header .header-actions #btn-call-nav,
+  .header .header-actions #btn-settings-nav { display: none; }
+  body { padding-bottom: 68px; }
+  .fab-scroll-top { bottom: 78px; }
+}
 
 /* --- Мобильные экраны: раньше здесь не было ни одного
    max-width брейкпоинта, поэтому шапка (лого + бейджи +
@@ -883,7 +940,7 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
   .lang-switch { margin-right: 2px; padding: 3px; }
   .lang-btn { min-width: 28px; padding: 5px 7px; font-size: 0.7rem; }
   .btn-icon { padding: 8px 10px; }
-  .btn-small { padding: 7px 11px 9px; font-size: 0.72rem; }
+  .btn-small { padding: 8px 11px; font-size: 0.72rem; }
   .match-columns { gap: 10px; }
   .task-image img { max-width: 150px; max-height: 150px; }
 }
@@ -900,7 +957,20 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 <div id="confetti-canvas"></div>
 <div id="toast-container" role="status" aria-live="polite"></div>
 <button type="button" id="btn-scroll-top" class="fab-scroll-top hidden" aria-label="Наверх">↑</button>
-<button type="button" id="btn-feedback" class="fab-feedback" aria-label="Обратная связь" title="">💬</button>
+<nav class="bottom-nav" id="bottom-nav" aria-label="Основная навигация">
+  <button type="button" class="bottom-nav-btn active" id="bnav-home" data-screen="screen-welcome">
+    <span class="bnav-icon">🏠</span><span class="bnav-label" id="bnav-home-label"></span>
+  </button>
+  <button type="button" class="bottom-nav-btn" id="bnav-vocabulary" data-screen="screen-vocabulary">
+    <span class="bnav-icon">📖</span><span class="bnav-label" id="bnav-vocabulary-label"></span>
+  </button>
+  <button type="button" class="bottom-nav-btn" id="bnav-call" data-screen="screen-call">
+    <span class="bnav-icon">📞</span><span class="bnav-label" id="bnav-call-label"></span>
+  </button>
+  <button type="button" class="bottom-nav-btn" id="bnav-settings" data-screen="screen-settings">
+    <span class="bnav-icon">⚙️</span><span class="bnav-label" id="bnav-settings-label"></span>
+  </button>
+</nav>
 <div class="app">
   <!-- Шапка -->
   <header class="header">
@@ -983,6 +1053,16 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
             <div class="settings-row-desc" id="settings-colorblind-desc"></div>
           </div>
           <button class="btn btn-icon settings-icon-btn" id="btn-colorblind" title="">👓</button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label" id="settings-feedback-label"></div>
+            <div class="settings-row-desc" id="settings-feedback-desc"></div>
+          </div>
+          <button class="btn btn-icon settings-icon-btn" id="btn-feedback" title="">💬</button>
         </div>
       </div>
 
@@ -1222,12 +1302,17 @@ const TRANSLATIONS = {
     settingsVocabAudioDesc: 'Автоматически проигрывать произношение слова при клике на него в задании',
     settingsColorblindLabel: 'Версия для дальтоников',
     settingsColorblindDesc: 'Контрастная цветовая схема и значки ✓/✗ вместо цвета',
+    settingsFeedbackLabel: 'Обратная связь',
     colorblindOnTitle: 'Версия для дальтоников: включена (нажмите, чтобы отключить)',
     colorblindOffTitle: 'Версия для дальтоников: выключена (нажмите, чтобы включить)',
     settingsTextsizeHeading: 'Размер текста',
     settingsCourseHeading: 'Курс',
     settingsCourseCurrent: 'Китайский язык',
     settingsCourseFuture: 'В будущем здесь появится выбор других языков для изучения.',
+    bnavHomeLabel: 'Главная',
+    bnavVocabularyLabel: 'Словарь',
+    bnavCallLabel: 'Звонок',
+    bnavSettingsLabel: 'Настройки',
     vocabAudioOnTitle: 'Аудио словаря: включено (нажмите, чтобы отключить)',
     vocabAudioOffTitle: 'Аудио словаря: выключено (нажмите, чтобы включить)',
     vocabPlayAudioLabel: 'Прослушать произношение',
@@ -1437,12 +1522,17 @@ const TRANSLATIONS = {
     settingsVocabAudioDesc: '点击任务中的单词时自动播放发音',
     settingsColorblindLabel: '色盲友好模式',
     settingsColorblindDesc: '高对比度配色，并用 ✓/✗ 图标代替颜色',
+    settingsFeedbackLabel: '反馈',
     colorblindOnTitle: '色盲友好模式：已开启（点击关闭）',
     colorblindOffTitle: '色盲友好模式：已关闭（点击开启）',
     settingsTextsizeHeading: '文字大小',
     settingsCourseHeading: '课程',
     settingsCourseCurrent: '中文',
     settingsCourseFuture: '未来这里将支持选择学习其他语言。',
+    bnavHomeLabel: '主页',
+    bnavVocabularyLabel: '词汇',
+    bnavCallLabel: '通话',
+    bnavSettingsLabel: '设置',
     vocabAudioOnTitle: '词汇音频：已开启（点击关闭）',
     vocabAudioOffTitle: '词汇音频：已关闭（点击开启）',
     vocabPlayAudioLabel: '播放发音',
@@ -1653,12 +1743,17 @@ const TRANSLATIONS = {
     settingsVocabAudioDesc: 'Automatically play a word\'s pronunciation when you tap it in a task',
     settingsColorblindLabel: 'Colorblind-friendly mode',
     settingsColorblindDesc: 'High-contrast colors and ✓/✗ icons instead of color alone',
+    settingsFeedbackLabel: 'Feedback',
     colorblindOnTitle: 'Colorblind-friendly mode: on (click to turn off)',
     colorblindOffTitle: 'Colorblind-friendly mode: off (click to turn on)',
     settingsTextsizeHeading: 'Text size',
     settingsCourseHeading: 'Course',
     settingsCourseCurrent: 'Chinese',
     settingsCourseFuture: 'A choice of other languages to learn will appear here in the future.',
+    bnavHomeLabel: 'Home',
+    bnavVocabularyLabel: 'Vocabulary',
+    bnavCallLabel: 'Call',
+    bnavSettingsLabel: 'Settings',
     vocabAudioOnTitle: 'Vocabulary audio: on (click to turn off)',
     vocabAudioOffTitle: 'Vocabulary audio: off (click to turn on)',
     vocabPlayAudioLabel: 'Play pronunciation',
@@ -2510,6 +2605,10 @@ function applyLanguage() {
   }
   const btnFeedback = document.getElementById('btn-feedback');
   if (btnFeedback) { btnFeedback.title = t('feedbackTitle'); btnFeedback.setAttribute('aria-label', t('feedbackTitle')); }
+  const settingsFeedbackLabel = document.getElementById('settings-feedback-label');
+  if (settingsFeedbackLabel) settingsFeedbackLabel.textContent = t('settingsFeedbackLabel');
+  const settingsFeedbackDesc = document.getElementById('settings-feedback-desc');
+  if (settingsFeedbackDesc) settingsFeedbackDesc.textContent = t('feedbackSubtitle');
   updateVocabAudioButton();
   const btnSettingsNav = document.getElementById('btn-settings-nav');
   if (btnSettingsNav) { btnSettingsNav.title = t('settingsTitle'); btnSettingsNav.setAttribute('aria-label', t('settingsTitle')); }
@@ -2541,6 +2640,14 @@ function applyLanguage() {
   if (settingsCourseCurrent) settingsCourseCurrent.textContent = t('settingsCourseCurrent');
   const settingsCourseFuture = document.getElementById('settings-course-future');
   if (settingsCourseFuture) settingsCourseFuture.textContent = t('settingsCourseFuture');
+  const bnavHomeLabel = document.getElementById('bnav-home-label');
+  if (bnavHomeLabel) bnavHomeLabel.textContent = t('bnavHomeLabel');
+  const bnavVocabLabel = document.getElementById('bnav-vocabulary-label');
+  if (bnavVocabLabel) bnavVocabLabel.textContent = t('bnavVocabularyLabel');
+  const bnavCallLabel = document.getElementById('bnav-call-label');
+  if (bnavCallLabel) bnavCallLabel.textContent = t('bnavCallLabel');
+  const bnavSettingsLabel = document.getElementById('bnav-settings-label');
+  if (bnavSettingsLabel) bnavSettingsLabel.textContent = t('bnavSettingsLabel');
   updateColorblindButton();
   renderLessons();
   updateHeader();
@@ -2559,10 +2666,21 @@ function updateThemeButton() {
 // ============================================
 // НАВИГАЦИЯ
 // ============================================
+const BOTTOM_NAV_SCREEN_MAP = {
+  'screen-welcome': 'bnav-home', 'screen-lessons': 'bnav-home', 'screen-task': 'bnav-home', 'screen-results': 'bnav-home',
+  'screen-vocabulary': 'bnav-vocabulary', 'screen-call': 'bnav-call', 'screen-settings': 'bnav-settings'
+};
+function updateBottomNavActive(screenId) {
+  const activeId = BOTTOM_NAV_SCREEN_MAP[screenId];
+  document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.id === activeId);
+  });
+}
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const target = document.getElementById(id);
   if (target) target.classList.add('active');
+  updateBottomNavActive(id);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function updateHeader() {
@@ -3004,7 +3122,7 @@ function initChapterNavArrows() {
   window.addEventListener('resize', updateChapterNavArrows);
 }
 
-// --- FAB «Обратная связь»: открывает модалку с контактами ---
+// --- Кнопка «Обратная связь» в настройках: открывает модалку с контактами ---
 function initFeedbackFab() {
   const fab = document.getElementById('btn-feedback');
   if (!fab) return;
@@ -3024,6 +3142,49 @@ function initFeedbackFab() {
       </a>`).join('')}</div>`;
     showModal(t('feedbackTitle'), html, `<button class="btn btn-secondary" onclick="closeModal()">${escapeHtml(t('closeLabel'))}</button>`);
   });
+}
+
+// --- Нижняя навигация (мобильные): клики повторяют действия шапки,
+// плюс автоскрытие при скролле вниз и появление при скролле вверх ---
+function initBottomNav() {
+  const nav = document.getElementById('bottom-nav');
+  if (!nav) return;
+  const actions = {
+    'bnav-home': () => { playSound('click'); showScreen('screen-welcome'); },
+    'bnav-vocabulary': () => {
+      playSound('click');
+      state.vocabSearchTerm = '';
+      const searchEl = document.getElementById('vocab-search');
+      if (searchEl) searchEl.value = '';
+      renderVocabularyScreen();
+      showScreen('screen-vocabulary');
+    },
+    'bnav-call': () => { playSound('click'); openCallScreen(); },
+    'bnav-settings': () => { playSound('click'); showScreen('screen-settings'); }
+  };
+  Object.keys(actions).forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', actions[id]);
+  });
+  let lastScrollY = window.scrollY;
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const y = window.scrollY;
+      const delta = y - lastScrollY;
+      if (y < 40) {
+        nav.classList.remove('nav-hidden');
+      } else if (delta > 6) {
+        nav.classList.add('nav-hidden');
+      } else if (delta < -6) {
+        nav.classList.remove('nav-hidden');
+      }
+      lastScrollY = y;
+      ticking = false;
+    });
+  }, { passive: true });
 }
 
 // --- FAB «Наверх»: показывается, когда меню выбора глав ушло за viewport ---
@@ -4358,6 +4519,13 @@ function initLocalVideoDrag() {
   function endDrag() { dragging = false; pip.classList.remove('dragging'); }
   pip.addEventListener('pointerup', endDrag);
   pip.addEventListener('pointercancel', endDrag);
+  pip.addEventListener('click', () => {
+    const room = document.getElementById('call-room');
+    if (room && room.classList.contains('board-focus')) {
+      pip.classList.toggle('expanded');
+      playSound('click');
+    }
+  });
 }
 
 async function startCallTo(rawCode) {
@@ -4450,6 +4618,28 @@ function toggleCallPanel(panelId) {
     else renderBoard();
   }
   if (willShow && panelId === 'call-presentation-panel') renderCurrentSlide();
+  updateCallFocusMode();
+}
+
+// --- Режим «доска/презентация» большая, видео — компактная полоска ---
+function updateCallFocusMode() {
+  const room = document.getElementById('call-room');
+  if (!room) return;
+  const boardPanel = document.getElementById('call-board-panel');
+  const presPanel = document.getElementById('call-presentation-panel');
+  const focus = !!((boardPanel && !boardPanel.classList.contains('hidden')) || (presPanel && !presPanel.classList.contains('hidden')));
+  room.classList.toggle('board-focus', focus);
+  const pip = document.getElementById('call-video-wrap-local');
+  if (pip) pip.classList.remove('expanded');
+  if (callState.boardCanvas) {
+    const targetW = focus ? 900 : 640;
+    const targetH = focus ? 560 : 360;
+    if (callState.boardCanvas.width !== targetW || callState.boardCanvas.height !== targetH) {
+      callState.boardCanvas.width = targetW;
+      callState.boardCanvas.height = targetH;
+      renderBoard();
+    }
+  }
 }
 
 // ------------------------------------------------
@@ -4646,11 +4836,40 @@ function drawSegmentWorld(ctx, canvas, worldFrom, worldTo, color, width) {
 }
 
 // Полный перерендер видимой доски из списка объектов (после пана/зума/новых элементов)
+function drawBoardGrid(ctx, canvas) {
+  const v = callState.boardView;
+  let cell = 40; // размер клетки в мировых координатах
+  let screenCell = cell * v.scale;
+  while (screenCell < 22 && cell < 5120) { cell *= 2; screenCell = cell * v.scale; }
+  while (screenCell > 90 && cell > 2.5) { cell /= 2; screenCell = cell * v.scale; }
+  const isDark = document.body.classList.contains('dark-theme');
+  ctx.save();
+  ctx.fillStyle = isDark ? '#1c2430' : '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(15,30,45,0.08)';
+  ctx.lineWidth = 1;
+  const startWorldX = Math.floor(v.offsetX / cell) * cell;
+  const startWorldY = Math.floor(v.offsetY / cell) * cell;
+  ctx.beginPath();
+  for (let wx = startWorldX; ; wx += cell) {
+    const sx = Math.round(worldToScreen(wx, 0).x) + 0.5;
+    if (sx > canvas.width + screenCell) break;
+    ctx.moveTo(sx, 0); ctx.lineTo(sx, canvas.height);
+  }
+  for (let wy = startWorldY; ; wy += cell) {
+    const sy = Math.round(worldToScreen(0, wy).y) + 0.5;
+    if (sy > canvas.height + screenCell) break;
+    ctx.moveTo(0, sy); ctx.lineTo(canvas.width, sy);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
 function renderBoard() {
   const canvas = callState.boardCanvas;
   const ctx = callState.boardCtx;
   if (!canvas || !ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBoardGrid(ctx, canvas);
   const items = activeBoard().items;
   items.forEach(item => {
     if (item.type === 'stroke') {
@@ -4907,7 +5126,8 @@ function endCall(userInitiated) {
   const rv = document.getElementById('call-remote-video'); if (rv) rv.srcObject = null;
   const muteIcon = document.getElementById('call-remote-mute-icon'); if (muteIcon) muteIcon.classList.add('hidden');
   const pip = document.getElementById('call-video-wrap-local');
-  if (pip) { pip.removeAttribute('style'); delete pip.dataset.dragInit; }
+  if (pip) { pip.removeAttribute('style'); pip.classList.remove('expanded'); delete pip.dataset.dragInit; }
+  if (room) room.classList.remove('board-focus');
   const connText = document.getElementById('call-connection-text'); if (connText) connText.textContent = 'Соединено';
   const chatBox = document.getElementById('call-chat-messages'); if (chatBox) chatBox.innerHTML = '';
   const chatPanel = document.getElementById('call-chat-panel'); if (chatPanel) chatPanel.classList.add('hidden');
@@ -5020,7 +5240,7 @@ function init() {
   document.getElementById('btn-presentation-prev').addEventListener('click', () => { playSound('click'); presentationPrev(); });
   document.getElementById('btn-presentation-next').addEventListener('click', () => { playSound('click'); presentationNext(); });
   document.querySelectorAll('.call-panel-close').forEach(btn => {
-    btn.addEventListener('click', () => { playSound('click'); document.getElementById(btn.dataset.closePanel).classList.add('hidden'); });
+    btn.addEventListener('click', () => { playSound('click'); document.getElementById(btn.dataset.closePanel).classList.add('hidden'); updateCallFocusMode(); });
   });
   let _vocabSearchTimer = null;
   document.getElementById('vocab-search').addEventListener('input', (e) => {
@@ -5037,6 +5257,8 @@ function init() {
   initChapterNavArrows();
   initScrollTopFab();
   initFeedbackFab();
+  initBottomNav();
+  updateBottomNavActive('screen-welcome');
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
     const taskScreen = document.getElementById('screen-task');
