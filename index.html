@@ -379,6 +379,8 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
   background-repeat: no-repeat; background-position: center; box-shadow: var(--shadow);
 }
 .question .chinese { font-size: 2.1rem; }
+.question .chinese.has-audio { position: relative; padding-right: 1.5em; }
+.question .chinese.has-audio::after { content: '🔊'; font-size: 0.5em; position: absolute; top: 6px; right: 8px; }
 .question .hint { font-size: 0.88rem; color: var(--text-light); font-weight: 500; margin-bottom: 10px; }
 
 /* --- Варианты ответа --- */
@@ -412,6 +414,7 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
   border-radius: 20px; margin-bottom: 18px;
 }
 .flashcard-chinese { font-size: 3rem; font-weight: 800; line-height: 1.15; margin-bottom: 6px; }
+.flashcard-chinese.has-audio::after { content: '🔊'; font-size: 1.1rem; margin-left: 10px; vertical-align: middle; }
 .flashcard-pinyin { font-size: 1.15rem; color: var(--text-light); font-weight: 700; margin-bottom: 10px; }
 .flashcard-translation { font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 18px; }
 .flashcard-example-wrap { border-top: 1.5px dashed var(--border); padding-top: 16px; margin-top: 6px; }
@@ -557,6 +560,27 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 .fab-scroll-top.hidden { opacity: 0; transform: translateY(12px); pointer-events: none; display: flex; }
 @media (prefers-reduced-motion: reduce) { .fab-scroll-top { transition: none; } }
 
+/* --- FAB «Обратная связь» --- */
+.fab-feedback {
+  position: fixed; left: 20px; bottom: 20px; z-index: 60; width: 52px; height: 52px; border-radius: 50%;
+  border: none; background: linear-gradient(155deg, var(--jade), var(--jade-hover)); color: #fff; font-size: 1.3rem; cursor: pointer;
+  box-shadow: 0 8px 22px -6px var(--jade-glow);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s var(--ease-back);
+}
+.fab-feedback:hover { transform: scale(1.06); }
+.fab-feedback:active { transform: scale(0.94); }
+.feedback-list { display: flex; flex-direction: column; gap: 12px; margin: 14px 0; }
+.feedback-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm);
+  background: var(--surface-alt, rgba(0,0,0,0.03)); text-decoration: none; color: inherit; transition: background 0.15s ease;
+}
+.feedback-item:hover { background: var(--surface-hover, rgba(0,0,0,0.06)); }
+.feedback-item .feedback-icon { font-size: 1.4rem; flex-shrink: 0; }
+.feedback-item .feedback-text { display: flex; flex-direction: column; }
+.feedback-item .feedback-label { font-size: 0.78rem; color: var(--text-light); }
+.feedback-item .feedback-value { font-weight: 700; }
+
 /* --- Главы на экране уроков (стиль Duolingo) --- */
 .chapter-nav-wrap { position: relative; display: flex; align-items: center; gap: 6px; }
 .chapter-nav { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 16px; margin-bottom: 4px; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scroll-behavior: smooth; flex: 1; min-width: 0; }
@@ -640,6 +664,14 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 .vocab-item .vocab-hanzi { font-size: 1.5rem; font-weight: 700; font-family: var(--font-display); }
 .vocab-item .vocab-pinyin { color: var(--ink-blue); font-weight: 700; font-size: 0.92rem; }
 .vocab-item .vocab-translation { color: var(--text-light); font-size: 0.92rem; margin-left: auto; }
+.vocab-audio-btn {
+  border: none; background: var(--jade); color: #fff; width: 30px; height: 30px; border-radius: 50%;
+  font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: transform 0.15s var(--ease-back);
+}
+.vocab-audio-btn:hover { transform: scale(1.08); }
+.vocab-audio-btn:active { transform: scale(0.92); }
+.btn-icon.muted-toggle { opacity: 0.55; }
 .vocab-empty { text-align: center; color: var(--text-light); padding: 30px 0; }
 
 /* --- Списки слов внутри модалки урока --- */
@@ -829,6 +861,7 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 <div id="confetti-canvas"></div>
 <div id="toast-container" role="status" aria-live="polite"></div>
 <button type="button" id="btn-scroll-top" class="fab-scroll-top hidden" aria-label="Наверх">↑</button>
+<button type="button" id="btn-feedback" class="fab-feedback" aria-label="Обратная связь" title="">💬</button>
 <div class="app">
   <!-- Шапка -->
   <header class="header">
@@ -842,6 +875,7 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
         <button class="btn btn-icon lang-btn" data-lang="en" type="button">EN</button>
       </div>
       <button class="btn btn-icon" id="btn-sound" title="">🔊</button>
+      <button class="btn btn-icon" id="btn-vocab-audio" title="">🗣️</button>
       <button class="btn btn-icon" id="btn-theme" title="">🌙</button>
       <button class="btn btn-secondary btn-small" id="btn-vocabulary-nav" title="">📖</button>
       <button class="btn btn-secondary btn-small" id="btn-call-nav" title="Видеозвонок с собеседником">📞</button>
@@ -1083,6 +1117,11 @@ const TRANSLATIONS = {
     vocabularyLabel: '📖 Словарь',
     vocabularyTitle: 'Словарь',
     closeLabel: 'Закрыть',
+    feedbackTitle: 'Обратная связь',
+    feedbackSubtitle: 'Нашли ошибку или есть предложение? Напишите нам:',
+    vocabAudioOnTitle: 'Аудио словаря: включено (нажмите, чтобы отключить)',
+    vocabAudioOffTitle: 'Аудио словаря: выключено (нажмите, чтобы включить)',
+    vocabPlayAudioLabel: 'Прослушать произношение',
     vocabSearchPlaceholder: 'Поиск по иероглифу, пиньиню или переводу…',
     vocabFilterAll: 'Все',
     vocabFilterByChapters: 'По главам',
@@ -1277,6 +1316,11 @@ const TRANSLATIONS = {
     vocabularyLabel: '📖 词汇',
     vocabularyTitle: '词汇表',
     closeLabel: '关闭',
+    feedbackTitle: '反馈',
+    feedbackSubtitle: '发现错误或有建议？请联系我们：',
+    vocabAudioOnTitle: '词汇音频：已开启（点击关闭）',
+    vocabAudioOffTitle: '词汇音频：已关闭（点击开启）',
+    vocabPlayAudioLabel: '播放发音',
     vocabSearchPlaceholder: '按汉字、拼音或翻译搜索…',
     vocabFilterAll: '全部',
     vocabFilterByChapters: '按章节',
@@ -1472,6 +1516,11 @@ const TRANSLATIONS = {
     vocabularyLabel: '📖 Vocabulary',
     vocabularyTitle: 'Vocabulary',
     closeLabel: 'Close',
+    feedbackTitle: 'Feedback',
+    feedbackSubtitle: 'Found a bug or have a suggestion? Contact us:',
+    vocabAudioOnTitle: 'Vocabulary audio: on (click to turn off)',
+    vocabAudioOffTitle: 'Vocabulary audio: off (click to turn on)',
+    vocabPlayAudioLabel: 'Play pronunciation',
     vocabSearchPlaceholder: 'Search by character, pinyin, or translation…',
     vocabFilterAll: 'All',
     vocabFilterByChapters: 'By chapter',
@@ -2216,9 +2265,9 @@ function saveProgress() {
 function loadSettings() {
   try {
     const raw = storageGet(STORAGE_KEY_SETTINGS);
-    if (raw) { state.settings = JSON.parse(raw); }
-    else { state.settings = { unlockMode: 'sequential' }; saveSettings(); }
-  } catch (e) { state.settings = { unlockMode: 'sequential' }; }
+    if (raw) { state.settings = JSON.parse(raw); if (state.settings.vocabAudioEnabled === undefined) state.settings.vocabAudioEnabled = true; }
+    else { state.settings = { unlockMode: 'sequential', vocabAudioEnabled: true }; saveSettings(); }
+  } catch (e) { state.settings = { unlockMode: 'sequential', vocabAudioEnabled: true }; }
 }
 function saveSettings() {
   try { storageSet(STORAGE_KEY_SETTINGS, JSON.stringify(state.settings)); }
@@ -2313,6 +2362,9 @@ function applyLanguage() {
   if (document.getElementById('screen-vocabulary') && document.getElementById('screen-vocabulary').classList.contains('active')) {
     renderVocabularyScreen();
   }
+  const btnFeedback = document.getElementById('btn-feedback');
+  if (btnFeedback) { btnFeedback.title = t('feedbackTitle'); btnFeedback.setAttribute('aria-label', t('feedbackTitle')); }
+  updateVocabAudioButton();
   renderLessons();
   updateHeader();
 }
@@ -2775,6 +2827,28 @@ function initChapterNavArrows() {
   window.addEventListener('resize', updateChapterNavArrows);
 }
 
+// --- FAB «Обратная связь»: открывает модалку с контактами ---
+function initFeedbackFab() {
+  const fab = document.getElementById('btn-feedback');
+  if (!fab) return;
+  fab.setAttribute('aria-label', t('feedbackTitle'));
+  fab.title = t('feedbackTitle');
+  fab.addEventListener('click', () => {
+    playSound('click');
+    const items = [
+      { icon: '✉️', label: 'Email', value: 'ubsbelarus@gmail.com', href: 'mailto:ubsbelarus@gmail.com' },
+      { icon: '📱', label: 'Telegram', value: '@GRomanovBY', href: 'https://t.me/GRomanovBY' },
+      { icon: '💻', label: 'GitHub', value: '@ubsbelarus', href: 'https://github.com/ubsbelarus' }
+    ];
+    const html = `<p class="hint">${escapeHtml(t('feedbackSubtitle'))}</p><div class="feedback-list">${items.map(it => `
+      <a class="feedback-item" href="${it.href}" target="_blank" rel="noopener noreferrer">
+        <span class="feedback-icon">${it.icon}</span>
+        <span class="feedback-text"><span class="feedback-label">${escapeHtml(it.label)}</span><span class="feedback-value">${escapeHtml(it.value)}</span></span>
+      </a>`).join('')}</div>`;
+    showModal(t('feedbackTitle'), html, `<button class="btn btn-secondary" onclick="closeModal()">${escapeHtml(t('closeLabel'))}</button>`);
+  });
+}
+
 // --- FAB «Наверх»: показывается, когда меню выбора глав ушло за viewport ---
 function initScrollTopFab() {
   const fab = document.getElementById('btn-scroll-top');
@@ -2885,6 +2959,15 @@ function renderTask() {
     if (task.chinese) { question.innerHTML += `<span class="chinese" lang="zh">${escapeHtml(task.chinese)}</span>`; }
     if (task.statement) { question.innerHTML += `<span class="chinese">${escapeHtml(task.statement)}</span>`; }
     container.appendChild(question);
+    if (task.chinese && findVocabWordByText(task.chinese)) {
+      const chineseSpan = question.querySelector('.chinese');
+      if (chineseSpan) {
+        chineseSpan.classList.add('has-audio');
+        chineseSpan.style.cursor = 'pointer';
+        chineseSpan.title = t('vocabPlayAudioLabel');
+        chineseSpan.addEventListener('click', () => playVocabWordAudio(task.chinese));
+      }
+    }
   }
   switch (task.type) {
     case 'translate': renderTranslateTask(container, task); break;
@@ -2916,9 +2999,10 @@ function renderTask() {
 function renderFlashcardTask(container, task) {
   const card = document.createElement('div');
   card.className = 'flashcard';
+  const hasAudio = task.chinese && findVocabWordByText(task.chinese);
   card.innerHTML = `
     <div class="flashcard-badge">${escapeHtml(t('flashcardNewWordLabel'))}</div>
-    <div class="flashcard-chinese" lang="zh">${escapeHtml(task.chinese || '')}</div>
+    <div class="flashcard-chinese${hasAudio ? ' has-audio' : ''}" lang="zh">${escapeHtml(task.chinese || '')}</div>
     ${task.pinyin ? `<div class="flashcard-pinyin">${escapeHtml(task.pinyin)}</div>` : ''}
     <div class="flashcard-translation">${escapeHtml(task.translation || '')}</div>
     ${task.example ? `<div class="flashcard-example-wrap">
@@ -2927,6 +3011,12 @@ function renderFlashcardTask(container, task) {
     </div>` : ''}
   `;
   container.appendChild(card);
+  const chineseEl = card.querySelector('.flashcard-chinese');
+  if (chineseEl && hasAudio) {
+    chineseEl.style.cursor = 'pointer';
+    chineseEl.title = t('vocabPlayAudioLabel');
+    chineseEl.addEventListener('click', () => playVocabWordAudio(task.chinese));
+  }
 }
 
 // --- Общий хелпер: список кнопок-вариантов с выбором одного ---
@@ -3029,6 +3119,7 @@ function renderMatchTask(container, task) {
     el.dataset.side = side;
     el.addEventListener('click', () => {
       playSound('click');
+      playVocabWordAudio(text);
       if (el.classList.contains('matched')) return;
       const col = side === 'left' ? leftCol : rightCol;
       col.querySelectorAll('.match-item').forEach(it => { if (!it.classList.contains('matched')) it.style.borderColor = ''; });
@@ -3130,6 +3221,7 @@ function renderSentenceTask(container, task) {
       tile.textContent = word;
       tile.addEventListener('click', () => {
         playSound('click');
+        playVocabWordAudio(word);
         userSentence.push(word);
         updateSlots();
         renderWords();
@@ -3600,12 +3692,61 @@ function vocabMatchesSearch(item, term) {
     (item.pinyin || '').toLowerCase().includes(q) ||
     (item.translation || '').toLowerCase().includes(q);
 }
+// ============================================
+// АУДИО СЛОВАРЯ — воспроизведение при клике на слово в заданиях
+// ============================================
+function isVocabAudioEnabled() {
+  return !state.settings || state.settings.vocabAudioEnabled !== false;
+}
+function toggleVocabAudioEnabled() {
+  if (!state.settings) state.settings = {};
+  state.settings.vocabAudioEnabled = !isVocabAudioEnabled();
+  saveSettings();
+  updateVocabAudioButton();
+  playSound('click');
+}
+function updateVocabAudioButton() {
+  const btn = document.getElementById('btn-vocab-audio');
+  if (!btn) return;
+  const on = isVocabAudioEnabled();
+  btn.textContent = on ? '🗣️' : '🔇';
+  btn.classList.toggle('muted-toggle', !on);
+  btn.title = t(on ? 'vocabAudioOnTitle' : 'vocabAudioOffTitle');
+}
+function findVocabWordByText(text) {
+  if (!text || !state.vocabulary) return null;
+  return state.vocabulary.find(w => w.hanzi === text && w.audio && w.audio.trim());
+}
+let _vocabAudioPlayer = null;
+function playVocabWordAudio(text) {
+  if (!isVocabAudioEnabled()) return;
+  const word = findVocabWordByText(text);
+  if (!word) return;
+  try {
+    if (_vocabAudioPlayer) { _vocabAudioPlayer.pause(); }
+    _vocabAudioPlayer = new Audio(word.audio);
+    _vocabAudioPlayer.play().catch(() => {});
+  } catch (e) {}
+}
+function playVocabWordById(id) {
+  const word = state.vocabulary && state.vocabulary.find(w => w.id === id);
+  if (!word || !word.audio) return;
+  try {
+    if (_vocabAudioPlayer) { _vocabAudioPlayer.pause(); }
+    _vocabAudioPlayer = new Audio(word.audio);
+    _vocabAudioPlayer.play().catch(() => {});
+  } catch (e) {}
+}
+
 function renderVocabItemRow(item, small) {
   const hanziCls = small ? 'vocab-hanzi' : 'vocab-hanzi';
+  const hasAudio = item.audio && item.audio.trim();
+  const audioBtn = hasAudio ? `<button type="button" class="vocab-audio-btn" onclick="event.stopPropagation(); playVocabWordById('${item.id}')" aria-label="${escapeHtml(t('vocabPlayAudioLabel'))}" title="${escapeHtml(t('vocabPlayAudioLabel'))}">🔊</button>` : '';
   return `<div class="${small ? 'vocab-modal-item' : 'vocab-item'}">
     <span class="${hanziCls}" lang="zh">${escapeHtml(item.hanzi)}</span>
     <span class="vocab-pinyin">${escapeHtml(item.pinyin)}</span>
     <span class="vocab-translation">${escapeHtml(item.translation)}</span>
+    ${audioBtn}
   </div>`;
 }
 
@@ -3754,6 +3895,7 @@ function mergeImportedVocabulary(vocab) {
       hanzi: v.hanzi,
       pinyin: v.pinyin,
       translation: v.translation || '',
+      audio: v.audio || undefined,
       chapterId: v.chapterId || undefined,
       lessonId: v.lessonId || undefined
     });
@@ -4587,6 +4729,7 @@ function init() {
   applyLanguage();
   updateHeader();
   document.getElementById('btn-sound').addEventListener('click', toggleSound);
+  document.getElementById('btn-vocab-audio').addEventListener('click', toggleVocabAudioEnabled);
   document.getElementById('btn-home').addEventListener('click', () => { playSound('click'); showScreen('screen-welcome'); });
   document.getElementById('btn-start').addEventListener('click', () => { playSound('click'); renderLessons(); showScreen('screen-lessons'); });
   document.getElementById('btn-back-lessons').addEventListener('click', () => { playSound('click'); renderLessons(); showScreen('screen-lessons'); });
@@ -4666,6 +4809,7 @@ function init() {
   });
   initChapterNavArrows();
   initScrollTopFab();
+  initFeedbackFab();
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
     const taskScreen = document.getElementById('screen-task');
