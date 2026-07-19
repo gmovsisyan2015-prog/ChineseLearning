@@ -93,6 +93,20 @@ body.dark-theme .option:hover { background: var(--bg); }
 body.dark-theme .sentence-slots { background: var(--bg); }
 body.dark-theme .welcome::before { opacity: 0.05; }
 
+/* --- Версия для дальтоников: контрастная сине-жёлтая палитра + иконки вместо чистого цвета --- */
+body.colorblind-mode {
+  --green: #0072B2; --green-hover: #005b8f; --green-dark: #004a75; --green-soft: #d7ecfa;
+  --red: #E69F00; --red-hover: #cc8d00; --red-dark: #a87200; --red-soft: #fff1d6;
+}
+body.dark-theme.colorblind-mode {
+  --green: #56B4E9; --green-hover: #74c1ee; --green-dark: #0072B2; --green-soft: #123244;
+  --red: #E69F00; --red-hover: #f0ad2c; --red-dark: #cc8d00; --red-soft: #3a2c0a;
+}
+body.colorblind-mode .option.correct::before { content: '✓ '; font-weight: 900; }
+body.colorblind-mode .option.wrong::before { content: '✗ '; font-weight: 900; }
+body.colorblind-mode .feedback.correct::before { content: '✓ '; font-weight: 900; }
+body.colorblind-mode .feedback.wrong::before { content: '✗ '; font-weight: 900; }
+
 /* --- Сброс и база --- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 /* Единый, заметный фокус-индикатор для клавиатурной навигации,
@@ -103,6 +117,9 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   outline-offset: 2px;
 }
 html { font-size: 16px; scroll-behavior: smooth; }
+html.text-size-sm { font-size: 14px; }
+html.text-size-lg { font-size: 18px; }
+html.text-size-xl { font-size: 20px; }
 body {
   font-family: var(--font);
   background: var(--canvas);
@@ -261,12 +278,13 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.01em; }
 .btn-blue:hover { background: var(--blue-hover); }
 .btn-blue:active { box-shadow: 0 0 0 0 var(--blue-dark); }
 .btn-large { padding: 16px 34px 19px; font-size: 1.05rem; border-radius: var(--radius); }
-.btn-small { padding: 8px 14px 10px; font-size: 0.78rem; box-shadow: 0 3px 0 0 var(--border-strong); }
+.btn-small { padding: 9px 14px; font-size: 0.78rem; box-shadow: 0 3px 0 0 var(--border-strong); display: inline-flex; align-items: center; justify-content: center; gap: 6px; line-height: 1; }
 .btn-small.btn-primary { box-shadow: 0 3px 0 0 var(--green-dark); }
 .btn-icon {
-  padding: 9px 12px 11px; font-size: 1.05rem; border-radius: var(--radius-sm);
+  padding: 10px; font-size: 1.05rem; border-radius: var(--radius-sm);
   background: var(--surface); color: var(--text); border: 2px solid var(--border);
   box-shadow: 0 3px 0 0 var(--border-strong); text-transform: none;
+  display: inline-flex; align-items: center; justify-content: center; line-height: 1; letter-spacing: normal;
 }
 .btn-icon:hover { background: var(--blue-soft); }
 .btn-icon:active { box-shadow: 0 0 0 0 var(--border-strong); }
@@ -621,6 +639,27 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 }
 .settings-card .hint { font-size: 0.82rem; color: var(--text-light); margin-top: 4px; }
 
+/* --- Экран настроек --- */
+.settings-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.settings-row:last-child { border-bottom: none; }
+.settings-row-label { font-weight: 800; font-size: 0.98rem; }
+.settings-row-desc { font-size: 0.82rem; color: var(--text-light); font-weight: 500; margin-top: 2px; }
+.settings-icon-btn { width: 46px; height: 46px; font-size: 1.3rem; border-radius: 14px; background: var(--canvas); border: 1.5px solid var(--border); flex-shrink: 0; }
+.settings-icon-btn.muted-toggle { opacity: 0.5; }
+.settings-lang-switch { display: flex; gap: 8px; background: var(--canvas); border-radius: 999px; padding: 6px; width: fit-content; }
+.settings-lang-switch .lang-btn { min-width: 52px; padding: 8px 14px; font-size: 0.9rem; }
+.text-size-options { display: flex; gap: 10px; flex-wrap: wrap; }
+.text-size-btn {
+  border: 1.5px solid var(--border); background: var(--canvas); border-radius: 12px; padding: 10px 18px;
+  cursor: pointer; font-weight: 800; color: var(--text); transition: all 0.15s ease;
+}
+.text-size-btn.active { border-color: var(--jade); background: var(--jade-soft); box-shadow: 0 0 0 3px var(--jade-glow); }
+.course-card-item {
+  display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--jade); background: var(--jade-soft); font-weight: 700;
+}
+.course-card-future { opacity: 0.65; margin-top: 10px; font-size: 0.85rem; }
+
 /* --- Динамические списки --- */
 .dynamic-list, .dynamic-pair-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .dynamic-list-item, .dynamic-pair-item { display: flex; gap: 8px; align-items: center; }
@@ -869,16 +908,9 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
     <div class="header-actions">
       <div class="streak-badge hidden-badge" id="streak-badge"><span class="flame">🔥</span><span id="streak-count">0</span></div>
       <div class="xp-badge hidden-badge" id="xp-badge"><span class="xp-gem">💎</span><span id="xp-count">0</span></div>
-      <div class="lang-switch" role="group" aria-label="Language switcher">
-        <button class="btn btn-icon lang-btn active" data-lang="ru" type="button">RU</button>
-        <button class="btn btn-icon lang-btn" data-lang="zh" type="button">中文</button>
-        <button class="btn btn-icon lang-btn" data-lang="en" type="button">EN</button>
-      </div>
-      <button class="btn btn-icon" id="btn-sound" title="">🔊</button>
-      <button class="btn btn-icon" id="btn-vocab-audio" title="">🗣️</button>
-      <button class="btn btn-icon" id="btn-theme" title="">🌙</button>
       <button class="btn btn-secondary btn-small" id="btn-vocabulary-nav" title="">📖</button>
       <button class="btn btn-secondary btn-small" id="btn-call-nav" title="Видеозвонок с собеседником">📞</button>
+      <button class="btn btn-secondary btn-small" id="btn-settings-nav" title="">⚙️</button>
       <button class="btn btn-secondary btn-small" id="btn-home">🏠</button>
     </div>
   </header>
@@ -908,6 +940,67 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
         <button type="button" class="chapter-nav-arrow hidden" id="chapter-nav-next" aria-label="▸">›</button>
       </div>
       <div id="lessons-list"></div>
+    </section>
+
+    <!-- Экран настроек -->
+    <section class="screen" id="screen-settings">
+      <h2 id="settings-title"></h2>
+
+      <div class="settings-card">
+        <h3 id="settings-language-heading"></h3>
+        <div class="lang-switch settings-lang-switch" role="group" aria-label="Language switcher">
+          <button class="btn btn-icon lang-btn active" data-lang="ru" type="button">RU</button>
+          <button class="btn btn-icon lang-btn" data-lang="zh" type="button">中文</button>
+          <button class="btn btn-icon lang-btn" data-lang="en" type="button">EN</button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label" id="settings-sound-label"></div>
+            <div class="settings-row-desc" id="settings-sound-desc"></div>
+          </div>
+          <button class="btn btn-icon settings-icon-btn" id="btn-sound" title="">🔊</button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label" id="settings-theme-label"></div>
+            <div class="settings-row-desc" id="settings-theme-desc"></div>
+          </div>
+          <button class="btn btn-icon settings-icon-btn" id="btn-theme" title="">🌙</button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label" id="settings-vocab-audio-label"></div>
+            <div class="settings-row-desc" id="settings-vocab-audio-desc"></div>
+          </div>
+          <button class="btn btn-icon settings-icon-btn" id="btn-vocab-audio" title="">🗣️</button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label" id="settings-colorblind-label"></div>
+            <div class="settings-row-desc" id="settings-colorblind-desc"></div>
+          </div>
+          <button class="btn btn-icon settings-icon-btn" id="btn-colorblind" title="">👓</button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3 id="settings-textsize-heading"></h3>
+        <div class="text-size-options">
+          <button type="button" class="text-size-btn" data-size="sm" style="font-size:0.8rem;">A</button>
+          <button type="button" class="text-size-btn" data-size="md" style="font-size:1rem;">A</button>
+          <button type="button" class="text-size-btn" data-size="lg" style="font-size:1.2rem;">A</button>
+          <button type="button" class="text-size-btn" data-size="xl" style="font-size:1.4rem;">A</button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3 id="settings-course-heading"></h3>
+        <div class="course-card-item">🇨🇳 <span id="settings-course-current"></span></div>
+        <div class="course-card-future" id="settings-course-future"></div>
+      </div>
     </section>
 
     <!-- Экран словаря -->
@@ -1119,6 +1212,22 @@ const TRANSLATIONS = {
     closeLabel: 'Закрыть',
     feedbackTitle: 'Обратная связь',
     feedbackSubtitle: 'Нашли ошибку или есть предложение? Напишите нам:',
+    settingsTitle: 'Настройки',
+    settingsLanguageHeading: 'Язык интерфейса',
+    settingsSoundLabel: 'Звуковые эффекты',
+    settingsSoundDesc: 'Звуки при нажатии, правильных и неправильных ответах',
+    settingsThemeLabel: 'Тёмная тема',
+    settingsThemeDesc: 'Переключение между светлым и тёмным оформлением',
+    settingsVocabAudioLabel: 'Аудио словаря в уроках',
+    settingsVocabAudioDesc: 'Автоматически проигрывать произношение слова при клике на него в задании',
+    settingsColorblindLabel: 'Версия для дальтоников',
+    settingsColorblindDesc: 'Контрастная цветовая схема и значки ✓/✗ вместо цвета',
+    colorblindOnTitle: 'Версия для дальтоников: включена (нажмите, чтобы отключить)',
+    colorblindOffTitle: 'Версия для дальтоников: выключена (нажмите, чтобы включить)',
+    settingsTextsizeHeading: 'Размер текста',
+    settingsCourseHeading: 'Курс',
+    settingsCourseCurrent: 'Китайский язык',
+    settingsCourseFuture: 'В будущем здесь появится выбор других языков для изучения.',
     vocabAudioOnTitle: 'Аудио словаря: включено (нажмите, чтобы отключить)',
     vocabAudioOffTitle: 'Аудио словаря: выключено (нажмите, чтобы включить)',
     vocabPlayAudioLabel: 'Прослушать произношение',
@@ -1318,6 +1427,22 @@ const TRANSLATIONS = {
     closeLabel: '关闭',
     feedbackTitle: '反馈',
     feedbackSubtitle: '发现错误或有建议？请联系我们：',
+    settingsTitle: '设置',
+    settingsLanguageHeading: '界面语言',
+    settingsSoundLabel: '音效',
+    settingsSoundDesc: '点击、答对和答错时的声音',
+    settingsThemeLabel: '深色主题',
+    settingsThemeDesc: '在浅色和深色外观之间切换',
+    settingsVocabAudioLabel: '课程中的词汇音频',
+    settingsVocabAudioDesc: '点击任务中的单词时自动播放发音',
+    settingsColorblindLabel: '色盲友好模式',
+    settingsColorblindDesc: '高对比度配色，并用 ✓/✗ 图标代替颜色',
+    colorblindOnTitle: '色盲友好模式：已开启（点击关闭）',
+    colorblindOffTitle: '色盲友好模式：已关闭（点击开启）',
+    settingsTextsizeHeading: '文字大小',
+    settingsCourseHeading: '课程',
+    settingsCourseCurrent: '中文',
+    settingsCourseFuture: '未来这里将支持选择学习其他语言。',
     vocabAudioOnTitle: '词汇音频：已开启（点击关闭）',
     vocabAudioOffTitle: '词汇音频：已关闭（点击开启）',
     vocabPlayAudioLabel: '播放发音',
@@ -1518,6 +1643,22 @@ const TRANSLATIONS = {
     closeLabel: 'Close',
     feedbackTitle: 'Feedback',
     feedbackSubtitle: 'Found a bug or have a suggestion? Contact us:',
+    settingsTitle: 'Settings',
+    settingsLanguageHeading: 'Interface language',
+    settingsSoundLabel: 'Sound effects',
+    settingsSoundDesc: 'Sounds for taps, correct and incorrect answers',
+    settingsThemeLabel: 'Dark theme',
+    settingsThemeDesc: 'Switch between light and dark appearance',
+    settingsVocabAudioLabel: 'Vocabulary audio in lessons',
+    settingsVocabAudioDesc: 'Automatically play a word\'s pronunciation when you tap it in a task',
+    settingsColorblindLabel: 'Colorblind-friendly mode',
+    settingsColorblindDesc: 'High-contrast colors and ✓/✗ icons instead of color alone',
+    colorblindOnTitle: 'Colorblind-friendly mode: on (click to turn off)',
+    colorblindOffTitle: 'Colorblind-friendly mode: off (click to turn on)',
+    settingsTextsizeHeading: 'Text size',
+    settingsCourseHeading: 'Course',
+    settingsCourseCurrent: 'Chinese',
+    settingsCourseFuture: 'A choice of other languages to learn will appear here in the future.',
     vocabAudioOnTitle: 'Vocabulary audio: on (click to turn off)',
     vocabAudioOffTitle: 'Vocabulary audio: off (click to turn on)',
     vocabPlayAudioLabel: 'Play pronunciation',
@@ -2265,9 +2406,14 @@ function saveProgress() {
 function loadSettings() {
   try {
     const raw = storageGet(STORAGE_KEY_SETTINGS);
-    if (raw) { state.settings = JSON.parse(raw); if (state.settings.vocabAudioEnabled === undefined) state.settings.vocabAudioEnabled = true; }
-    else { state.settings = { unlockMode: 'sequential', vocabAudioEnabled: true }; saveSettings(); }
-  } catch (e) { state.settings = { unlockMode: 'sequential', vocabAudioEnabled: true }; }
+    if (raw) {
+      state.settings = JSON.parse(raw);
+      if (state.settings.vocabAudioEnabled === undefined) state.settings.vocabAudioEnabled = true;
+      if (state.settings.textSize === undefined) state.settings.textSize = 'md';
+      if (state.settings.colorblindMode === undefined) state.settings.colorblindMode = false;
+    }
+    else { state.settings = { unlockMode: 'sequential', vocabAudioEnabled: true, textSize: 'md', colorblindMode: false }; saveSettings(); }
+  } catch (e) { state.settings = { unlockMode: 'sequential', vocabAudioEnabled: true, textSize: 'md', colorblindMode: false }; }
 }
 function saveSettings() {
   try { storageSet(STORAGE_KEY_SETTINGS, JSON.stringify(state.settings)); }
@@ -2365,6 +2511,37 @@ function applyLanguage() {
   const btnFeedback = document.getElementById('btn-feedback');
   if (btnFeedback) { btnFeedback.title = t('feedbackTitle'); btnFeedback.setAttribute('aria-label', t('feedbackTitle')); }
   updateVocabAudioButton();
+  const btnSettingsNav = document.getElementById('btn-settings-nav');
+  if (btnSettingsNav) { btnSettingsNav.title = t('settingsTitle'); btnSettingsNav.setAttribute('aria-label', t('settingsTitle')); }
+  const settingsTitleEl = document.getElementById('settings-title');
+  if (settingsTitleEl) settingsTitleEl.textContent = t('settingsTitle');
+  const settingsLangHeading = document.getElementById('settings-language-heading');
+  if (settingsLangHeading) settingsLangHeading.textContent = t('settingsLanguageHeading');
+  const settingsSoundLabel = document.getElementById('settings-sound-label');
+  if (settingsSoundLabel) settingsSoundLabel.textContent = t('settingsSoundLabel');
+  const settingsSoundDesc = document.getElementById('settings-sound-desc');
+  if (settingsSoundDesc) settingsSoundDesc.textContent = t('settingsSoundDesc');
+  const settingsThemeLabel = document.getElementById('settings-theme-label');
+  if (settingsThemeLabel) settingsThemeLabel.textContent = t('settingsThemeLabel');
+  const settingsThemeDesc = document.getElementById('settings-theme-desc');
+  if (settingsThemeDesc) settingsThemeDesc.textContent = t('settingsThemeDesc');
+  const settingsVocabAudioLabel = document.getElementById('settings-vocab-audio-label');
+  if (settingsVocabAudioLabel) settingsVocabAudioLabel.textContent = t('settingsVocabAudioLabel');
+  const settingsVocabAudioDesc = document.getElementById('settings-vocab-audio-desc');
+  if (settingsVocabAudioDesc) settingsVocabAudioDesc.textContent = t('settingsVocabAudioDesc');
+  const settingsColorblindLabel = document.getElementById('settings-colorblind-label');
+  if (settingsColorblindLabel) settingsColorblindLabel.textContent = t('settingsColorblindLabel');
+  const settingsColorblindDesc = document.getElementById('settings-colorblind-desc');
+  if (settingsColorblindDesc) settingsColorblindDesc.textContent = t('settingsColorblindDesc');
+  const settingsTextsizeHeading = document.getElementById('settings-textsize-heading');
+  if (settingsTextsizeHeading) settingsTextsizeHeading.textContent = t('settingsTextsizeHeading');
+  const settingsCourseHeading = document.getElementById('settings-course-heading');
+  if (settingsCourseHeading) settingsCourseHeading.textContent = t('settingsCourseHeading');
+  const settingsCourseCurrent = document.getElementById('settings-course-current');
+  if (settingsCourseCurrent) settingsCourseCurrent.textContent = t('settingsCourseCurrent');
+  const settingsCourseFuture = document.getElementById('settings-course-future');
+  if (settingsCourseFuture) settingsCourseFuture.textContent = t('settingsCourseFuture');
+  updateColorblindButton();
   renderLessons();
   updateHeader();
 }
@@ -3693,6 +3870,49 @@ function vocabMatchesSearch(item, term) {
     (item.translation || '').toLowerCase().includes(q);
 }
 // ============================================
+// РАЗМЕР ТЕКСТА
+// ============================================
+function applyTextSize(size, persist) {
+  const sizes = ['sm', 'md', 'lg', 'xl'];
+  if (sizes.indexOf(size) === -1) size = 'md';
+  document.documentElement.classList.remove('text-size-sm', 'text-size-lg', 'text-size-xl');
+  if (size !== 'md') document.documentElement.classList.add('text-size-' + size);
+  if (!state.settings) state.settings = {};
+  state.settings.textSize = size;
+  if (persist) saveSettings();
+  updateTextSizeButtons();
+}
+function updateTextSizeButtons() {
+  const size = (state.settings && state.settings.textSize) || 'md';
+  document.querySelectorAll('.text-size-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.size === size);
+  });
+}
+
+// ============================================
+// ВЕРСИЯ ДЛЯ ДАЛЬТОНИКОВ
+// ============================================
+function applyColorblindMode(on, persist) {
+  if (!state.settings) state.settings = {};
+  state.settings.colorblindMode = !!on;
+  document.body.classList.toggle('colorblind-mode', !!on);
+  if (persist) saveSettings();
+  updateColorblindButton();
+}
+function toggleColorblindMode() {
+  applyColorblindMode(!(state.settings && state.settings.colorblindMode), true);
+  playSound('click');
+}
+function updateColorblindButton() {
+  const btn = document.getElementById('btn-colorblind');
+  if (!btn) return;
+  const on = !!(state.settings && state.settings.colorblindMode);
+  btn.classList.toggle('muted-toggle', !on);
+  btn.title = t(on ? 'colorblindOnTitle' : 'colorblindOffTitle');
+  btn.setAttribute('aria-label', btn.title);
+}
+
+// ============================================
 // АУДИО СЛОВАРЯ — воспроизведение при клике на слово в заданиях
 // ============================================
 function isVocabAudioEnabled() {
@@ -4720,6 +4940,8 @@ function init() {
   loadStreak();
   loadXp();
   loadSoundSetting();
+  applyTextSize(state.settings.textSize || 'md', false);
+  applyColorblindMode(!!state.settings.colorblindMode, false);
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       playSound('click');
@@ -4730,6 +4952,11 @@ function init() {
   updateHeader();
   document.getElementById('btn-sound').addEventListener('click', toggleSound);
   document.getElementById('btn-vocab-audio').addEventListener('click', toggleVocabAudioEnabled);
+  document.getElementById('btn-colorblind').addEventListener('click', toggleColorblindMode);
+  document.getElementById('btn-settings-nav').addEventListener('click', () => { playSound('click'); showScreen('screen-settings'); });
+  document.querySelectorAll('.text-size-btn').forEach(btn => {
+    btn.addEventListener('click', () => { playSound('click'); applyTextSize(btn.dataset.size, true); });
+  });
   document.getElementById('btn-home').addEventListener('click', () => { playSound('click'); showScreen('screen-welcome'); });
   document.getElementById('btn-start').addEventListener('click', () => { playSound('click'); renderLessons(); showScreen('screen-lessons'); });
   document.getElementById('btn-back-lessons').addEventListener('click', () => { playSound('click'); renderLessons(); showScreen('screen-lessons'); });
