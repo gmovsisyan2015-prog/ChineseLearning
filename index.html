@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#58cc02">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='30' fill='%2358cc02'/%3E%3Ctext x='50' y='68' font-size='54' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='900'%3E汉%3C/text%3E%3C/svg%3E">
-<title>Китайский язык — Интерактивные уроки</title>
+<title>OctoLearn — Интерактивные уроки китайского</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&display=swap" rel="stylesheet">
@@ -208,6 +208,24 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.01em; }
 }
 .logo:active { transform: scale(0.94); }
 .header-actions { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+
+/* --- Интро-анимация лого при первой загрузке приложения (только значок и
+   название, без аватарки/маскота) — включается один раз через
+   playIntroAnimation(), см. init(). --- */
+@keyframes octoIntroHanko {
+  0% { transform: scale(0.3) rotate(-25deg); opacity: 0; }
+  55% { transform: scale(1.18) rotate(8deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes octoIntroTitle {
+  0% { transform: translateX(-6px); opacity: 0; letter-spacing: 0.3em; }
+  100% { transform: translateX(0); opacity: 1; letter-spacing: 0.01em; }
+}
+.logo.intro-play .hanko { animation: octoIntroHanko 0.7s var(--ease-back) both; }
+.logo.intro-play #app-title-text { display: inline-block; animation: octoIntroTitle 0.55s ease-out 0.18s both; }
+@media (prefers-reduced-motion: reduce) {
+  .logo.intro-play .hanko, .logo.intro-play #app-title-text { animation: none; }
+}
 
 /* --- Стрик-бейдж --- */
 .streak-badge {
@@ -661,6 +679,14 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 }
 .course-card-future { opacity: 0.65; margin-top: 10px; font-size: 0.85rem; }
 
+/* --- Вебинар через YouTube-встройку (см. §16 AI_GUIDE): просто поле для
+   ссылки + iframe-плеер, без отдельного экрана и синхронизации с сервером. --- */
+.webinar-input-row { display: flex; gap: 8px; margin-top: 4px; }
+.webinar-input-row input { flex: 1; margin-bottom: 0 !important; }
+.webinar-player-wrap { position: relative; width: 100%; padding-top: 56.25%; margin-top: 14px; border-radius: var(--radius-sm); overflow: hidden; background: #000; }
+.webinar-player-wrap.hidden { display: none; }
+.webinar-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+
 /* --- Динамические списки --- */
 .dynamic-list, .dynamic-pair-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .dynamic-list-item, .dynamic-pair-item { display: flex; gap: 8px; align-items: center; }
@@ -875,6 +901,10 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 .call-ctrl-active { background: var(--blue-soft) !important; color: var(--blue-dark) !important; }
 @media (max-width: 560px) {
   .call-video-wrap-local { width: 36%; right: 8px; bottom: 8px; }
+  .call-ctrl-btn { padding: 14px 16px; min-height: 44px; }
+  .call-board-tools .btn, .call-board-toolbar .btn { min-width: 40px; min-height: 40px; padding: 8px 10px; }
+  .call-board-tool input[type="range"] { width: 70px; }
+  .board-select { padding: 10px 8px; }
 }
 /* Чат/доска/презентация на мобильных — выезжающая снизу панель поверх видео,
    а не блок в общем скролле страницы (иначе приходится долго скроллить мимо
@@ -1098,6 +1128,18 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
         <div class="course-card-item">🇨🇳 <span id="settings-course-current"></span></div>
         <div class="course-card-future" id="settings-course-future"></div>
       </div>
+
+      <div class="settings-card">
+        <h3 id="settings-webinar-heading"></h3>
+        <div class="settings-row-desc" id="settings-webinar-desc" style="margin-bottom:10px;"></div>
+        <div class="webinar-input-row">
+          <input type="text" id="webinar-url-input" autocomplete="off" spellcheck="false">
+          <button class="btn btn-primary btn-small" id="btn-webinar-show"></button>
+        </div>
+        <div class="webinar-player-wrap hidden" id="webinar-player-wrap">
+          <iframe id="webinar-player" class="webinar-iframe" src="" title="YouTube webinar" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
     </section>
 
     <!-- Экран словаря -->
@@ -1184,6 +1226,11 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
               <button type="button" class="btn btn-icon btn-small board-tool-btn" id="board-tool-text" data-tool="text" title="Текст">🔤</button>
               <button type="button" class="btn btn-icon btn-small board-tool-btn" id="board-tool-hand" data-tool="hand" title="Рука — двигать доску">✋</button>
             </div>
+            <div class="call-board-tools" role="group" aria-label="Масштаб доски">
+              <button type="button" class="btn btn-icon btn-small" id="board-zoom-out" title="Уменьшить масштаб">➖</button>
+              <button type="button" class="btn btn-secondary btn-small" id="board-zoom-reset" title="Сбросить масштаб до 100%">100%</button>
+              <button type="button" class="btn btn-icon btn-small" id="board-zoom-in" title="Увеличить масштаб">➕</button>
+            </div>
             <label class="call-board-tool">Цвет <input type="color" id="board-color" value="#1cb0f6"></label>
             <label class="call-board-tool">Толщина <input type="range" id="board-width" min="1" max="14" value="3"></label>
             <button type="button" class="btn btn-secondary btn-small" id="btn-board-image" title="Вставить картинку">🖼️</button>
@@ -1192,7 +1239,7 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
             <select id="board-select" class="board-select" title="Текущая доска"></select>
             <button type="button" class="btn btn-secondary btn-small" id="btn-board-new" title="Новая доска">➕</button>
           </div>
-          <p class="hint call-board-hint">Доска бесконечная: возьмите инструмент «✋ Рука», чтобы двигать её в стороны, колесо мыши — масштаб. Можно вставить картинку (Ctrl+V) или перетащить файл на доску.</p>
+          <p class="hint call-board-hint">Доска бесконечная: возьмите инструмент «✋ Рука», чтобы двигать её в стороны. Масштаб — колесо мыши, кнопки ➖/➕/100%, или щипок двумя пальцами на телефоне/планшете. Можно вставить картинку (Ctrl+V) или перетащить файл на доску.</p>
           <div class="call-board-canvas-wrap" id="call-board-canvas-wrap">
             <canvas id="call-board-canvas" class="call-board-canvas" width="640" height="360"></canvas>
           </div>
@@ -1292,6 +1339,7 @@ const STORAGE_KEY_SOUND = 'chinese_sound_v1';
 const STORAGE_KEY_XP = 'chinese_xp_v1';
 const STORAGE_KEY_LESSON_UNITS = 'chinese_lesson_units_v1';
 const STORAGE_KEY_VOCAB = 'chinese_vocabulary_v1';
+const STORAGE_KEY_WEBINAR_URL = 'chinese_webinar_url_v1';
 // Версия встроенного демо-контента (2 демо-урока + их словарь/глава).
 // Увеличивайте это число при каждом обновлении getDemoData()/getDemoVocabulary()/
 // getDemoUnits() в коде — тогда у всех, кто уже открывал сайт раньше, при
@@ -1305,7 +1353,7 @@ const XP_PERFECT_BONUS = 20;
 
 const TRANSLATIONS = {
   ru: {
-    appTitle: 'Китайский язык',
+    appTitle: 'OctoLearn',
     logoTitle: 'Перейти на главный экран',
     themeTitle: 'Переключить тему',
     soundOnTitle: 'Выключить звук',
@@ -1342,6 +1390,11 @@ const TRANSLATIONS = {
     settingsCourseHeading: 'Курс',
     settingsCourseCurrent: 'Китайский язык',
     settingsCourseFuture: 'В будущем здесь появится выбор других языков для изучения.',
+    settingsWebinarHeading: 'Вебинар',
+    settingsWebinarDesc: 'Вставьте ссылку на YouTube-трансляцию или видео — оно откроется прямо здесь.',
+    webinarUrlPlaceholder: 'Ссылка на YouTube...',
+    showWebinarLabel: 'Показать',
+    webinarInvalidUrlAlert: 'Не удалось распознать ссылку на YouTube. Проверьте, что она скопирована полностью.',
     bnavHomeLabel: 'Главная',
     bnavVocabularyLabel: 'Словарь',
     bnavCallLabel: 'Звонок',
@@ -1527,7 +1580,7 @@ const TRANSLATIONS = {
     verifyFailure: '❌ ПОДПИСЬ НЕВЕРНА\n\n{reason}\n\nФайл мог быть подделан.'
   },
   zh: {
-    appTitle: '中文课程',
+    appTitle: 'OctoLearn',
     logoTitle: '返回主界面',
     themeTitle: '切换主题',
     soundOnTitle: '关闭声音',
@@ -1564,6 +1617,11 @@ const TRANSLATIONS = {
     settingsCourseHeading: '课程',
     settingsCourseCurrent: '中文',
     settingsCourseFuture: '未来这里将支持选择学习其他语言。',
+    settingsWebinarHeading: '网络研讨会',
+    settingsWebinarDesc: '粘贴YouTube直播或视频链接，它将直接在这里打开。',
+    webinarUrlPlaceholder: 'YouTube链接...',
+    showWebinarLabel: '显示',
+    webinarInvalidUrlAlert: '无法识别YouTube链接，请确认已完整复制。',
     bnavHomeLabel: '主页',
     bnavVocabularyLabel: '词汇',
     bnavCallLabel: '通话',
@@ -1751,7 +1809,7 @@ const TRANSLATIONS = {
     verifyFailure: '❌ 签名无效\n\n{reason}\n\n文件可能被篡改。'
   },
   en: {
-    appTitle: 'Chinese Language',
+    appTitle: 'OctoLearn',
     logoTitle: 'Return to home',
     themeTitle: 'Switch theme',
     soundOnTitle: 'Mute sound',
@@ -1787,6 +1845,11 @@ const TRANSLATIONS = {
     settingsCourseHeading: 'Course',
     settingsCourseCurrent: 'Chinese',
     settingsCourseFuture: 'A choice of other languages to learn will appear here in the future.',
+    settingsWebinarHeading: 'Webinar',
+    settingsWebinarDesc: 'Paste a YouTube livestream or video link and it will open right here.',
+    webinarUrlPlaceholder: 'YouTube link...',
+    showWebinarLabel: 'Show',
+    webinarInvalidUrlAlert: "Couldn't recognize that YouTube link. Check that it was copied in full.",
     bnavHomeLabel: 'Home',
     bnavVocabularyLabel: 'Vocabulary',
     bnavCallLabel: 'Call',
@@ -2965,6 +3028,14 @@ function applyLanguage() {
   if (settingsCourseCurrent) settingsCourseCurrent.textContent = t('settingsCourseCurrent');
   const settingsCourseFuture = document.getElementById('settings-course-future');
   if (settingsCourseFuture) settingsCourseFuture.textContent = t('settingsCourseFuture');
+  const settingsWebinarHeading = document.getElementById('settings-webinar-heading');
+  if (settingsWebinarHeading) settingsWebinarHeading.textContent = t('settingsWebinarHeading');
+  const settingsWebinarDesc = document.getElementById('settings-webinar-desc');
+  if (settingsWebinarDesc) settingsWebinarDesc.textContent = t('settingsWebinarDesc');
+  const webinarUrlInput = document.getElementById('webinar-url-input');
+  if (webinarUrlInput) webinarUrlInput.placeholder = t('webinarUrlPlaceholder');
+  const btnWebinarShow = document.getElementById('btn-webinar-show');
+  if (btnWebinarShow) btnWebinarShow.textContent = t('showWebinarLabel');
   const bnavHomeLabel = document.getElementById('bnav-home-label');
   if (bnavHomeLabel) bnavHomeLabel.textContent = t('bnavHomeLabel');
   const bnavVocabLabel = document.getElementById('bnav-vocabulary-label');
@@ -4445,6 +4516,61 @@ function updateColorblindButton() {
 }
 
 // ============================================
+// ВЕБИНАР — просто вставка YouTube-ссылки и показ плеера в <iframe>
+// (см. §16 в AI_GUIDE.md). Никакой синхронизации между устройствами —
+// каждый вставляет ссылку, которую ему прислали, в свой браузер.
+// ============================================
+// Достаёт video ID из разных форматов ссылок YouTube (watch?v=, youtu.be/,
+// embed/, shorts/, live/) или принимает сам "голый" 11-символьный ID.
+// Возвращает null, если распознать не удалось — тогда встраивать нечего.
+function getYoutubeEmbedUrl(rawInput) {
+  if (!rawInput) return null;
+  const input = rawInput.trim();
+  if (!input) return null;
+  const idPattern = /^[a-zA-Z0-9_-]{11}$/;
+  if (idPattern.test(input)) return 'https://www.youtube.com/embed/' + input;
+  let url;
+  try { url = new URL(input); } catch (e) { return null; }
+  const host = url.hostname.replace(/^www\./, '');
+  if (host !== 'youtube.com' && host !== 'youtu.be' && host !== 'm.youtube.com') return null;
+  let videoId = null;
+  if (host === 'youtu.be') {
+    videoId = url.pathname.slice(1).split('/')[0];
+  } else if (url.pathname === '/watch') {
+    videoId = url.searchParams.get('v');
+  } else {
+    const match = url.pathname.match(/^\/(embed|shorts|live)\/([a-zA-Z0-9_-]{11})/);
+    if (match) videoId = match[2];
+  }
+  if (!videoId || !idPattern.test(videoId)) return null;
+  return 'https://www.youtube.com/embed/' + videoId;
+}
+function showWebinarPlayer() {
+  const input = document.getElementById('webinar-url-input');
+  const wrap = document.getElementById('webinar-player-wrap');
+  const iframe = document.getElementById('webinar-player');
+  if (!input || !wrap || !iframe) return;
+  const embedUrl = getYoutubeEmbedUrl(input.value);
+  if (!embedUrl) {
+    alert(t('webinarInvalidUrlAlert'));
+    return;
+  }
+  iframe.src = embedUrl;
+  wrap.classList.remove('hidden');
+  try { storageSet(STORAGE_KEY_WEBINAR_URL, input.value.trim()); } catch (e) {}
+}
+// Восстанавливает последнюю введённую ссылку (без автозапуска плеера —
+// чтобы видео не начинало грузиться само при каждом открытии настроек).
+function loadWebinarUrlField() {
+  const input = document.getElementById('webinar-url-input');
+  if (!input) return;
+  try {
+    const saved = storageGet(STORAGE_KEY_WEBINAR_URL);
+    if (saved) input.value = saved;
+  } catch (e) {}
+}
+
+// ============================================
 // АУДИО СЛОВАРЯ — воспроизведение при клике на слово в заданиях
 // ============================================
 function isVocabAudioEnabled() {
@@ -4517,6 +4643,34 @@ function attachVocabWordAudioHandlers(el) {
     });
   });
 }
+// Фолбэк озвучки через Web Speech API (SpeechSynthesis) — используется, когда
+// у слова нет записанного аудио или запись не смогла воспроизвестись
+// (повреждённый base64, автоплей заблокирован браузером и т.п.). Не проверяет
+// isVocabAudioEnabled сама — это делают функции-обёртки выше по стеку.
+function speakChineseFallback(text) {
+  if (!text) return;
+  if (!('speechSynthesis' in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'zh-CN';
+    window.speechSynthesis.speak(utter);
+  } catch (e) {}
+}
+// Общая логика воспроизведения записанного аудио слова с фолбэком на
+// синтез речи — если аудио нет, или Audio не смог загрузиться/сыграть.
+function playWordAudioWithFallback(word) {
+  if (!word) return;
+  if (_vocabAudioPlayer) { try { _vocabAudioPlayer.pause(); } catch (e) {} }
+  if (!word.audio || !word.audio.trim()) { speakChineseFallback(word.hanzi); return; }
+  try {
+    _vocabAudioPlayer = new Audio(word.audio);
+    _vocabAudioPlayer.addEventListener('error', () => speakChineseFallback(word.hanzi), { once: true });
+    _vocabAudioPlayer.play().catch(() => speakChineseFallback(word.hanzi));
+  } catch (e) {
+    speakChineseFallback(word.hanzi);
+  }
+}
 // Озвучивает первое известное слово словаря, найденное в тексте (точное
 // совпадение или как часть более длинной фразы) — используется везде, где
 // показывается китайский текст, чтобы озвучка словаря работала одинаково
@@ -4525,31 +4679,19 @@ function playVocabAudioForText(text) {
   if (!isVocabAudioEnabled()) return;
   const word = findVocabWordByText(text) || findVocabWordInText(text);
   if (!word) return;
-  try {
-    if (_vocabAudioPlayer) { _vocabAudioPlayer.pause(); }
-    _vocabAudioPlayer = new Audio(word.audio);
-    _vocabAudioPlayer.play().catch(() => {});
-  } catch (e) {}
+  playWordAudioWithFallback(word);
 }
 let _vocabAudioPlayer = null;
 function playVocabWordAudio(text) {
   if (!isVocabAudioEnabled()) return;
   const word = findVocabWordByText(text);
   if (!word) return;
-  try {
-    if (_vocabAudioPlayer) { _vocabAudioPlayer.pause(); }
-    _vocabAudioPlayer = new Audio(word.audio);
-    _vocabAudioPlayer.play().catch(() => {});
-  } catch (e) {}
+  playWordAudioWithFallback(word);
 }
 function playVocabWordById(id) {
   const word = state.vocabulary && state.vocabulary.find(w => w.id === id);
-  if (!word || !word.audio) return;
-  try {
-    if (_vocabAudioPlayer) { _vocabAudioPlayer.pause(); }
-    _vocabAudioPlayer = new Audio(word.audio);
-    _vocabAudioPlayer.play().catch(() => {});
-  } catch (e) {}
+  if (!word) return;
+  playWordAudioWithFallback(word);
 }
 
 function renderVocabItemRow(item, small) {
@@ -5170,7 +5312,27 @@ function initWhiteboard() {
   renderBoard();
 
   let panStart = null;
+  // Отслеживаем все одновременно активные касания (для щипка двумя пальцами).
+  // Ключ — pointerId, значение — координаты в пикселях канваса.
+  const activePointers = new Map();
+  let lastPinchDistance = null;
+  function canvasPoint(e) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: (e.clientX - rect.left) / rect.width * canvas.width, y: (e.clientY - rect.top) / rect.height * canvas.height };
+  }
   canvas.addEventListener('pointerdown', (e) => {
+    activePointers.set(e.pointerId, canvasPoint(e));
+    if (activePointers.size === 2) {
+      // Второй палец коснулся доски — это щипок для масштабирования,
+      // а не рисование/перетаскивание. Отменяем то, что успели начать
+      // первым пальцем, и переключаемся в режим масштаба.
+      if (callState.boardDrawing) { endStroke(); }
+      callState.boardPanning = false; panStart = null;
+      const pts = [...activePointers.values()];
+      lastPinchDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      return;
+    }
+    if (activePointers.size > 2) return; // третий палец игнорируем
     const worldPos = posFromEvent(e, canvas);
     if (callState.boardTool === 'hand') {
       canvas.setPointerCapture(e.pointerId);
@@ -5196,6 +5358,24 @@ function initWhiteboard() {
     }
   });
   canvas.addEventListener('pointermove', (e) => {
+    if (activePointers.has(e.pointerId)) activePointers.set(e.pointerId, canvasPoint(e));
+    if (activePointers.size === 2) {
+      const pts = [...activePointers.values()];
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const midX = (pts[0].x + pts[1].x) / 2, midY = (pts[0].y + pts[1].y) / 2;
+      if (lastPinchDistance && dist > 0) {
+        const worldBefore = screenToWorld(midX, midY);
+        const factor = dist / lastPinchDistance;
+        callState.boardView.scale = Math.max(0.3, Math.min(4, callState.boardView.scale * factor));
+        const worldAfter = screenToWorld(midX, midY);
+        callState.boardView.offsetX += worldBefore.x - worldAfter.x;
+        callState.boardView.offsetY += worldBefore.y - worldAfter.y;
+        renderBoard();
+      }
+      lastPinchDistance = dist;
+      return;
+    }
+    if (activePointers.size >= 2) return;
     if (callState.boardPanning && panStart) {
       const rect = canvas.getBoundingClientRect();
       const screenX = (e.clientX - rect.left) / rect.width * canvas.width;
@@ -5215,7 +5395,13 @@ function initWhiteboard() {
     sendData({ type: 'stroke-point', boardId: callState.activeBoardId, strokeId: callState.activeStrokeId, point: pos });
     callState.boardLast = pos;
   });
-  function endStroke() { callState.boardDrawing = false; callState.boardLast = null; callState.activeStrokeId = null; callState.boardPanning = false; panStart = null; }
+  function endStroke(e) {
+    if (e && activePointers.has(e.pointerId)) {
+      activePointers.delete(e.pointerId);
+      if (activePointers.size < 2) lastPinchDistance = null;
+    }
+    callState.boardDrawing = false; callState.boardLast = null; callState.activeStrokeId = null; callState.boardPanning = false; panStart = null;
+  }
   canvas.addEventListener('pointerup', endStroke);
   canvas.addEventListener('pointerleave', endStroke);
   canvas.addEventListener('pointercancel', endStroke);
@@ -5234,6 +5420,28 @@ function initWhiteboard() {
     callState.boardView.offsetY += worldBefore.y - worldAfter.y;
     renderBoard();
   }, { passive: false });
+
+  // Кнопки ➖/➕/100% — тот же масштаб, что колесо мыши и щипок, но доступный
+  // одним тапом (нужны на устройствах без мыши и для тех, кому щипок неудобен).
+  function zoomBoardByButton(factor) {
+    const sx = canvas.width / 2, sy = canvas.height / 2;
+    const worldBefore = screenToWorld(sx, sy);
+    callState.boardView.scale = Math.max(0.3, Math.min(4, callState.boardView.scale * factor));
+    const worldAfter = screenToWorld(sx, sy);
+    callState.boardView.offsetX += worldBefore.x - worldAfter.x;
+    callState.boardView.offsetY += worldBefore.y - worldAfter.y;
+    renderBoard();
+  }
+  const zoomInBtn = document.getElementById('board-zoom-in');
+  const zoomOutBtn = document.getElementById('board-zoom-out');
+  const zoomResetBtn = document.getElementById('board-zoom-reset');
+  if (zoomInBtn) zoomInBtn.addEventListener('click', () => { playSound('click'); zoomBoardByButton(1.25); });
+  if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => { playSound('click'); zoomBoardByButton(0.8); });
+  if (zoomResetBtn) zoomResetBtn.addEventListener('click', () => {
+    playSound('click');
+    callState.boardView.scale = 1; callState.boardView.offsetX = 0; callState.boardView.offsetY = 0;
+    renderBoard();
+  });
 
   // Вставка картинки: Ctrl+V, пока открыта панель доски
   if (!window._boardPasteListenerAdded) { document.addEventListener('paste', handleBoardPaste); window._boardPasteListenerAdded = true; }
@@ -5643,6 +5851,17 @@ function openCallScreen() {
 // ============================================
 // ИНИЦИАЛИЗАЦИЯ И СОБЫТИЯ
 // ============================================
+// Разовая интро-анимация лого в шапке при загрузке приложения (значок +
+// название "OctoLearn"), без аватарки/маскота — просто акцент на бренде.
+// Класс снимается сразу после завершения анимации, чтобы не мешать
+// последующим кликам/перерисовкам шапки.
+function playIntroAnimation() {
+  const logoEl = document.getElementById('logo');
+  if (!logoEl) return;
+  logoEl.classList.add('intro-play');
+  logoEl.addEventListener('animationend', () => logoEl.classList.remove('intro-play'), { once: true });
+}
+
 function init() {
   loadData();
   loadSettings();
@@ -5745,11 +5964,17 @@ function init() {
   document.querySelectorAll('.vocab-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => { playSound('click'); setVocabFilterMode(btn.dataset.mode); });
   });
+  loadWebinarUrlField();
+  document.getElementById('btn-webinar-show').addEventListener('click', () => { playSound('click'); showWebinarPlayer(); });
+  document.getElementById('webinar-url-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); playSound('click'); showWebinarPlayer(); }
+  });
   initChapterNavArrows();
   initScrollTopFab();
   initFeedbackFab();
   initBottomNav();
   updateBottomNavActive('screen-welcome');
+  playIntroAnimation();
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
     const taskScreen = document.getElementById('screen-task');
