@@ -679,14 +679,6 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 }
 .course-card-future { opacity: 0.65; margin-top: 10px; font-size: 0.85rem; }
 
-/* --- Вебинар через YouTube-встройку (см. §16 AI_GUIDE): просто поле для
-   ссылки + iframe-плеер, без отдельного экрана и синхронизации с сервером. --- */
-.webinar-input-row { display: flex; gap: 8px; margin-top: 4px; }
-.webinar-input-row input { flex: 1; margin-bottom: 0 !important; }
-.webinar-player-wrap { position: relative; width: 100%; padding-top: 56.25%; margin-top: 14px; border-radius: var(--radius-sm); overflow: hidden; background: #000; }
-.webinar-player-wrap.hidden { display: none; }
-.webinar-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
-
 /* --- Динамические списки --- */
 .dynamic-list, .dynamic-pair-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .dynamic-list-item, .dynamic-pair-item { display: flex; gap: 8px; align-items: center; }
@@ -1021,7 +1013,7 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
 <div class="app">
   <!-- Шапка -->
   <header class="header">
-    <div class="logo" id="logo" title=""><span class="hanko hanko-sm">汉</span> <span id="app-title-text">Китайский язык</span></div>
+    <div class="logo" id="logo" title=""><span class="hanko hanko-sm">汉</span> <span id="app-title-text">OctoLearn</span></div>
     <div class="header-actions">
       <div class="streak-badge hidden-badge" id="streak-badge"><span class="flame">🔥</span><span id="streak-count">0</span></div>
       <div class="xp-badge hidden-badge" id="xp-badge"><span class="xp-gem">💎</span><span id="xp-count">0</span></div>
@@ -1129,16 +1121,10 @@ body.dark-theme .btn-icon:hover { background: var(--blue-soft); }
         <div class="course-card-future" id="settings-course-future"></div>
       </div>
 
-      <div class="settings-card">
-        <h3 id="settings-webinar-heading"></h3>
-        <div class="settings-row-desc" id="settings-webinar-desc" style="margin-bottom:10px;"></div>
-        <div class="webinar-input-row">
-          <input type="text" id="webinar-url-input" autocomplete="off" spellcheck="false">
-          <button class="btn btn-primary btn-small" id="btn-webinar-show"></button>
-        </div>
-        <div class="webinar-player-wrap hidden" id="webinar-player-wrap">
-          <iframe id="webinar-player" class="webinar-iframe" src="" title="YouTube webinar" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-        </div>
+      <div class="settings-card" style="border-color: var(--red-soft);">
+        <h3 id="settings-danger-heading" style="color: var(--red);"></h3>
+        <div class="settings-row-desc" id="settings-danger-desc" style="margin-bottom:12px;"></div>
+        <button type="button" class="btn btn-danger btn-small" id="btn-clear-all-data"></button>
       </div>
     </section>
 
@@ -1339,7 +1325,6 @@ const STORAGE_KEY_SOUND = 'chinese_sound_v1';
 const STORAGE_KEY_XP = 'chinese_xp_v1';
 const STORAGE_KEY_LESSON_UNITS = 'chinese_lesson_units_v1';
 const STORAGE_KEY_VOCAB = 'chinese_vocabulary_v1';
-const STORAGE_KEY_WEBINAR_URL = 'chinese_webinar_url_v1';
 // Версия встроенного демо-контента (2 демо-урока + их словарь/глава).
 // Увеличивайте это число при каждом обновлении getDemoData()/getDemoVocabulary()/
 // getDemoUnits() в коде — тогда у всех, кто уже открывал сайт раньше, при
@@ -1390,11 +1375,12 @@ const TRANSLATIONS = {
     settingsCourseHeading: 'Курс',
     settingsCourseCurrent: 'Китайский язык',
     settingsCourseFuture: 'В будущем здесь появится выбор других языков для изучения.',
-    settingsWebinarHeading: 'Вебинар',
-    settingsWebinarDesc: 'Вставьте ссылку на YouTube-трансляцию или видео — оно откроется прямо здесь.',
-    webinarUrlPlaceholder: 'Ссылка на YouTube...',
-    showWebinarLabel: 'Показать',
-    webinarInvalidUrlAlert: 'Не удалось распознать ссылку на YouTube. Проверьте, что она скопирована полностью.',
+    settingsDangerHeading: 'Опасная зона',
+    settingsDangerDesc: 'Полностью очистить все данные приложения на этом устройстве: прогресс уроков, словарь, стрик, опыт и настройки. Это действие необратимо.',
+    clearAllDataLabel: 'Очистить все данные',
+    clearAllDataConfirmTitle: 'Точно очистить все данные?',
+    clearAllDataConfirmText: 'Будут безвозвратно удалены: весь прогресс по урокам, стрик и опыт, словарь, настройки и сохранённые предпочтения на этом устройстве. Отменить это действие будет невозможно.',
+    clearAllDataConfirmYes: 'Да, очистить всё',
     bnavHomeLabel: 'Главная',
     bnavVocabularyLabel: 'Словарь',
     bnavCallLabel: 'Звонок',
@@ -1617,11 +1603,12 @@ const TRANSLATIONS = {
     settingsCourseHeading: '课程',
     settingsCourseCurrent: '中文',
     settingsCourseFuture: '未来这里将支持选择学习其他语言。',
-    settingsWebinarHeading: '网络研讨会',
-    settingsWebinarDesc: '粘贴YouTube直播或视频链接，它将直接在这里打开。',
-    webinarUrlPlaceholder: 'YouTube链接...',
-    showWebinarLabel: '显示',
-    webinarInvalidUrlAlert: '无法识别YouTube链接，请确认已完整复制。',
+    settingsDangerHeading: '危险区域',
+    settingsDangerDesc: '彻底清除此设备上应用的所有数据：课程进度、词汇、连续学习天数、经验值和设置。此操作不可撤销。',
+    clearAllDataLabel: '清除所有数据',
+    clearAllDataConfirmTitle: '确定要清除所有数据吗？',
+    clearAllDataConfirmText: '此设备上的所有课程进度、连续学习天数、经验值、词汇、设置和已保存的偏好都将被永久删除，且无法恢复。',
+    clearAllDataConfirmYes: '是的，全部清除',
     bnavHomeLabel: '主页',
     bnavVocabularyLabel: '词汇',
     bnavCallLabel: '通话',
@@ -1845,11 +1832,12 @@ const TRANSLATIONS = {
     settingsCourseHeading: 'Course',
     settingsCourseCurrent: 'Chinese',
     settingsCourseFuture: 'A choice of other languages to learn will appear here in the future.',
-    settingsWebinarHeading: 'Webinar',
-    settingsWebinarDesc: 'Paste a YouTube livestream or video link and it will open right here.',
-    webinarUrlPlaceholder: 'YouTube link...',
-    showWebinarLabel: 'Show',
-    webinarInvalidUrlAlert: "Couldn't recognize that YouTube link. Check that it was copied in full.",
+    settingsDangerHeading: 'Danger zone',
+    settingsDangerDesc: 'Completely clear all app data on this device: lesson progress, vocabulary, streak, XP, and settings. This cannot be undone.',
+    clearAllDataLabel: 'Clear all data',
+    clearAllDataConfirmTitle: 'Really clear all data?',
+    clearAllDataConfirmText: 'This will permanently delete all lesson progress, streak and XP, vocabulary, settings, and saved preferences on this device. This action cannot be undone.',
+    clearAllDataConfirmYes: 'Yes, clear everything',
     bnavHomeLabel: 'Home',
     bnavVocabularyLabel: 'Vocabulary',
     bnavCallLabel: 'Call',
@@ -2734,6 +2722,16 @@ function idbSetRaw(key, value) {
     } catch (e) { reject(e); }
   }));
 }
+function idbDeleteRaw(key) {
+  return openIDB().then(db => new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE_NAME, 'readwrite');
+      tx.objectStore(IDB_STORE_NAME).delete(key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    } catch (e) { resolve(false); }
+  }));
+}
 const _storageCache = {};
 let _storageReady = false;
 // Список всех ключей, которые приложение хранит — используется для
@@ -2773,6 +2771,19 @@ function storageSet(key, value) {
   idbSetRaw(key, value).catch(e => console.warn('Не удалось записать в IndexedDB ключ ' + key + ':', e));
 }
 
+// Полностью очищает все данные приложения на этом устройстве (см. кнопку
+// "Очистить все данные" в настройках): IndexedDB, кэш в памяти и старый
+// localStorage-фолбэк, — затем перезагружает страницу, чтобы приложение
+// поднялось заново как при первой установке.
+async function clearAllAppData() {
+  await Promise.all(ALL_STORAGE_KEYS.map(key => idbDeleteRaw(key).catch(() => {})));
+  ALL_STORAGE_KEYS.forEach(key => {
+    _storageCache[key] = null;
+    try { localStorage.removeItem(key); } catch (e) {}
+  });
+  window.location.reload();
+}
+
 function loadData() {
   let isFreshInstall = false;
   try {
@@ -2792,7 +2803,16 @@ function loadData() {
   migrateDemoLessonsIntoChapter();
   try {
     const vocabRaw = storageGet(STORAGE_KEY_VOCAB);
-    if (vocabRaw) { state.vocabulary = JSON.parse(vocabRaw); }
+    if (vocabRaw) {
+      const parsed = JSON.parse(vocabRaw);
+      // Админ-панель сохраняет словарь в подписанном виде
+      // { vocabulary: [...], signature }, а не голым массивом — принимаем
+      // оба формата, чтобы не падать, если оба приложения делят одно и то
+      // же хранилище браузера (см. saveVocabulary() в Octopus_Learn_Admin).
+      if (Array.isArray(parsed)) { state.vocabulary = parsed; }
+      else if (parsed && Array.isArray(parsed.vocabulary)) { state.vocabulary = parsed.vocabulary; }
+      else { state.vocabulary = []; }
+    }
     else if (isFreshInstall) { state.vocabulary = getDemoVocabulary(); saveVocabulary(); }
     else { state.vocabulary = []; }
   } catch (e) { state.vocabulary = []; }
@@ -3028,14 +3048,12 @@ function applyLanguage() {
   if (settingsCourseCurrent) settingsCourseCurrent.textContent = t('settingsCourseCurrent');
   const settingsCourseFuture = document.getElementById('settings-course-future');
   if (settingsCourseFuture) settingsCourseFuture.textContent = t('settingsCourseFuture');
-  const settingsWebinarHeading = document.getElementById('settings-webinar-heading');
-  if (settingsWebinarHeading) settingsWebinarHeading.textContent = t('settingsWebinarHeading');
-  const settingsWebinarDesc = document.getElementById('settings-webinar-desc');
-  if (settingsWebinarDesc) settingsWebinarDesc.textContent = t('settingsWebinarDesc');
-  const webinarUrlInput = document.getElementById('webinar-url-input');
-  if (webinarUrlInput) webinarUrlInput.placeholder = t('webinarUrlPlaceholder');
-  const btnWebinarShow = document.getElementById('btn-webinar-show');
-  if (btnWebinarShow) btnWebinarShow.textContent = t('showWebinarLabel');
+  const settingsDangerHeading = document.getElementById('settings-danger-heading');
+  if (settingsDangerHeading) settingsDangerHeading.textContent = t('settingsDangerHeading');
+  const settingsDangerDesc = document.getElementById('settings-danger-desc');
+  if (settingsDangerDesc) settingsDangerDesc.textContent = t('settingsDangerDesc');
+  const btnClearAllData = document.getElementById('btn-clear-all-data');
+  if (btnClearAllData) btnClearAllData.textContent = t('clearAllDataLabel');
   const bnavHomeLabel = document.getElementById('bnav-home-label');
   if (bnavHomeLabel) bnavHomeLabel.textContent = t('bnavHomeLabel');
   const bnavVocabLabel = document.getElementById('bnav-vocabulary-label');
@@ -4515,59 +4533,24 @@ function updateColorblindButton() {
   btn.setAttribute('aria-label', btn.title);
 }
 
-// ============================================
-// ВЕБИНАР — просто вставка YouTube-ссылки и показ плеера в <iframe>
-// (см. §16 в AI_GUIDE.md). Никакой синхронизации между устройствами —
-// каждый вставляет ссылку, которую ему прислали, в свой браузер.
-// ============================================
-// Достаёт video ID из разных форматов ссылок YouTube (watch?v=, youtu.be/,
-// embed/, shorts/, live/) или принимает сам "голый" 11-символьный ID.
-// Возвращает null, если распознать не удалось — тогда встраивать нечего.
-function getYoutubeEmbedUrl(rawInput) {
-  if (!rawInput) return null;
-  const input = rawInput.trim();
-  if (!input) return null;
-  const idPattern = /^[a-zA-Z0-9_-]{11}$/;
-  if (idPattern.test(input)) return 'https://www.youtube.com/embed/' + input;
-  let url;
-  try { url = new URL(input); } catch (e) { return null; }
-  const host = url.hostname.replace(/^www\./, '');
-  if (host !== 'youtube.com' && host !== 'youtu.be' && host !== 'm.youtube.com') return null;
-  let videoId = null;
-  if (host === 'youtu.be') {
-    videoId = url.pathname.slice(1).split('/')[0];
-  } else if (url.pathname === '/watch') {
-    videoId = url.searchParams.get('v');
-  } else {
-    const match = url.pathname.match(/^\/(embed|shorts|live)\/([a-zA-Z0-9_-]{11})/);
-    if (match) videoId = match[2];
+// --- Кнопка "Очистить все данные" в настройках (см. §"опасная зона") ---
+// Сначала показывает предупреждающую модалку с подтверждением, и только
+// после явного согласия реально стирает всё хранилище на устройстве.
+function requestClearAllData() {
+  showModal(
+    t('clearAllDataConfirmTitle'),
+    `<p>${escapeHtml(t('clearAllDataConfirmText'))}</p>`,
+    `<button class="btn btn-secondary btn-small" onclick="closeModal()">${escapeHtml(t('cancelLabel'))}</button>
+     <button class="btn btn-danger btn-small" id="btn-confirm-clear-all-data">${escapeHtml(t('clearAllDataConfirmYes'))}</button>`
+  );
+  const confirmBtn = document.getElementById('btn-confirm-clear-all-data');
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', () => {
+      playSound('click');
+      confirmBtn.disabled = true;
+      clearAllAppData();
+    });
   }
-  if (!videoId || !idPattern.test(videoId)) return null;
-  return 'https://www.youtube.com/embed/' + videoId;
-}
-function showWebinarPlayer() {
-  const input = document.getElementById('webinar-url-input');
-  const wrap = document.getElementById('webinar-player-wrap');
-  const iframe = document.getElementById('webinar-player');
-  if (!input || !wrap || !iframe) return;
-  const embedUrl = getYoutubeEmbedUrl(input.value);
-  if (!embedUrl) {
-    alert(t('webinarInvalidUrlAlert'));
-    return;
-  }
-  iframe.src = embedUrl;
-  wrap.classList.remove('hidden');
-  try { storageSet(STORAGE_KEY_WEBINAR_URL, input.value.trim()); } catch (e) {}
-}
-// Восстанавливает последнюю введённую ссылку (без автозапуска плеера —
-// чтобы видео не начинало грузиться само при каждом открытии настроек).
-function loadWebinarUrlField() {
-  const input = document.getElementById('webinar-url-input');
-  if (!input) return;
-  try {
-    const saved = storageGet(STORAGE_KEY_WEBINAR_URL);
-    if (saved) input.value = saved;
-  } catch (e) {}
 }
 
 // ============================================
@@ -4591,9 +4574,13 @@ function updateVocabAudioButton() {
   btn.classList.toggle('muted-toggle', !on);
   btn.title = t(on ? 'vocabAudioOnTitle' : 'vocabAudioOffTitle');
 }
+// Ищет слово словаря по точному совпадению текста. Раньше требовалось,
+// чтобы у слова было записанное аудио — теперь достаточно, чтобы слово
+// просто было в словаре: если записи нет, сработает TTS-фолбэк
+// (см. playWordAudioWithFallback / speakChineseFallback).
 function findVocabWordByText(text) {
   if (!text || !state.vocabulary) return null;
-  return state.vocabulary.find(w => w.hanzi === text && w.audio && w.audio.trim());
+  return state.vocabulary.find(w => w.hanzi === text);
 }
 // Для составных фраз (утверждение в задании "правда/ложь", пример на
 // карточке-флеш-карте и т.п.) точного совпадения не будет — ищем самое
@@ -4602,21 +4589,22 @@ function findVocabWordInText(text) {
   if (!text || !state.vocabulary) return null;
   let best = null;
   for (const w of state.vocabulary) {
-    if (!w.hanzi || !w.audio || !w.audio.trim()) continue;
+    if (!w.hanzi) continue;
     if (text.indexOf(w.hanzi) === -1) continue;
     if (!best || w.hanzi.length > best.hanzi.length) best = w;
   }
   return best;
 }
-// Разбивает фразу на фрагменты: каждое известное слово словаря (с аудио)
+// Разбивает фразу на фрагменты: каждое известное слово словаря
 // оборачивается в отдельный кликабельный <span>, остальной текст остаётся
 // как есть. Так на карточке/в предложении озвучивается КАЖДОЕ известное
 // слово по отдельности (например "你好", "我", "学生" в одном предложении),
-// а не только одно самое длинное слово на всю фразу.
+// а не только одно самое длинное слово на всю фразу. Аудио-запись не
+// обязательна — без неё сработает TTS-фолбэк.
 function renderTextWithVocabAudio(text) {
   if (!text) return '';
   const words = (state.vocabulary || [])
-    .filter(w => w.hanzi && w.audio && w.audio.trim())
+    .filter(w => w.hanzi)
     .sort((a, b) => b.hanzi.length - a.hanzi.length);
   let html = '';
   let i = 0;
@@ -4643,19 +4631,59 @@ function attachVocabWordAudioHandlers(el) {
     });
   });
 }
+// Разово "прогревает" список голосов синтеза речи — на некоторых
+// устройствах/браузерах getVoices() в первый момент после загрузки
+// страницы возвращает пустой список, пока голоса не подгрузятся асинхронно.
+// Вызывается один раз в init(), заранее, чтобы к первому клику по слову
+// список уже был готов.
+let _voicesPrimed = false;
+function primeSpeechVoices() {
+  if (_voicesPrimed || !('speechSynthesis' in window)) return;
+  _voicesPrimed = true;
+  try {
+    window.speechSynthesis.getVoices();
+    if ('onvoiceschanged' in window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = () => { try { window.speechSynthesis.getVoices(); } catch (e) {} };
+    }
+  } catch (e) {}
+}
+// Ищет установленный в системе голос для китайского — если браузер не
+// подставляет его сам по одному lang='zh-CN' (бывает на части устройств).
+function pickChineseVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  try {
+    const voices = window.speechSynthesis.getVoices() || [];
+    return voices.find(v => v.lang === 'zh-CN')
+      || voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'))
+      || null;
+  } catch (e) { return null; }
+}
 // Фолбэк озвучки через Web Speech API (SpeechSynthesis) — используется, когда
 // у слова нет записанного аудио или запись не смогла воспроизвестись
 // (повреждённый base64, автоплей заблокирован браузером и т.п.). Не проверяет
 // isVocabAudioEnabled сама — это делают функции-обёртки выше по стеку.
 function speakChineseFallback(text) {
   if (!text) return;
-  if (!('speechSynthesis' in window)) return;
+  if (!('speechSynthesis' in window)) { console.warn('Этот браузер не поддерживает озвучку слов (Web Speech API)'); return; }
   try {
-    window.speechSynthesis.cancel();
+    const synth = window.speechSynthesis;
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'zh-CN';
-    window.speechSynthesis.speak(utter);
-  } catch (e) {}
+    const voice = pickChineseVoice();
+    if (voice) utter.voice = voice;
+    utter.onerror = (e) => console.warn('Ошибка озвучки слова:', (e && e.error) || e);
+    // ВАЖНО: cancel() прямо перед speak() в один такт в части версий Chrome
+    // "проглатывает" новую фразу — отменяем очередь только если она реально
+    // занята, и даём браузеру такт на обработку перед следующим speak().
+    if (synth.speaking || synth.pending) {
+      synth.cancel();
+      setTimeout(() => { try { synth.speak(utter); } catch (e) { console.warn('Ошибка озвучки слова:', e); } }, 60);
+    } else {
+      synth.speak(utter);
+    }
+  } catch (e) {
+    console.warn('Не удалось озвучить слово через Web Speech API:', e);
+  }
 }
 // Общая логика воспроизведения записанного аудио слова с фолбэком на
 // синтез речи — если аудио нет, или Audio не смог загрузиться/сыграть.
@@ -4696,8 +4724,9 @@ function playVocabWordById(id) {
 
 function renderVocabItemRow(item, small) {
   const hanziCls = small ? 'vocab-hanzi' : 'vocab-hanzi';
-  const hasAudio = item.audio && item.audio.trim();
-  const audioBtn = hasAudio ? `<button type="button" class="vocab-audio-btn" onclick="event.stopPropagation(); playVocabWordById('${item.id}')" aria-label="${escapeHtml(t('vocabPlayAudioLabel'))}" title="${escapeHtml(t('vocabPlayAudioLabel'))}">🔊</button>` : '';
+  // Кнопка озвучки показывается всегда: если для слова есть запись — играет
+  // она, если нет — срабатывает TTS-фолбэк (playWordAudioWithFallback).
+  const audioBtn = `<button type="button" class="vocab-audio-btn" onclick="event.stopPropagation(); playVocabWordById('${item.id}')" aria-label="${escapeHtml(t('vocabPlayAudioLabel'))}" title="${escapeHtml(t('vocabPlayAudioLabel'))}">🔊</button>`;
   return `<div class="${small ? 'vocab-modal-item' : 'vocab-item'}">
     <span class="${hanziCls}" lang="zh">${escapeHtml(item.hanzi)}</span>
     <span class="vocab-pinyin">${escapeHtml(item.pinyin)}</span>
@@ -5964,17 +5993,14 @@ function init() {
   document.querySelectorAll('.vocab-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => { playSound('click'); setVocabFilterMode(btn.dataset.mode); });
   });
-  loadWebinarUrlField();
-  document.getElementById('btn-webinar-show').addEventListener('click', () => { playSound('click'); showWebinarPlayer(); });
-  document.getElementById('webinar-url-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); playSound('click'); showWebinarPlayer(); }
-  });
+  document.getElementById('btn-clear-all-data').addEventListener('click', () => { playSound('click'); requestClearAllData(); });
   initChapterNavArrows();
   initScrollTopFab();
   initFeedbackFab();
   initBottomNav();
   updateBottomNavActive('screen-welcome');
   playIntroAnimation();
+  primeSpeechVoices();
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
     const taskScreen = document.getElementById('screen-task');
